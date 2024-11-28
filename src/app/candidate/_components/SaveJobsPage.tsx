@@ -4,14 +4,28 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AiOutlineLeft, AiOutlineRight } from 'react-icons/ai';
 import { JobType } from "@/app/schemaValidations/save.schema";
+import ApiRequestSave from '@/app/apiRequest/save';
+import { number } from 'zod';
+import { getCookie } from 'cookies-next';
+import { useRouter } from 'next/navigation';
 
 interface SaveJobsPageProps {
   savedJobs: JobType[] | null;
+  candidateId?: number | null;// Thêm prop này
 }
 
-const SaveJobsPage: React.FC<SaveJobsPageProps> = ({ savedJobs }) => {
+
+const SaveJobsPage: React.FC<SaveJobsPageProps> = ({ savedJobs, candidateId }) => {
+
+  console.log('Props received:', { savedJobs, candidateId }); 
+  // CÁC BIẾN QUẢN LÝ PHÂN TRANG
   const [currentPage, setCurrentPage] = useState(0);
   const jobsPerPage = 5;
+
+  // BIẾN ĐỂ XÓA
+  const [Delete, setDelete] = useState<number | null>(null);
+
+  const router = useRouter();
 
   useEffect(() => {
     setCurrentPage(0);
@@ -26,7 +40,7 @@ const SaveJobsPage: React.FC<SaveJobsPageProps> = ({ savedJobs }) => {
       </div>
     );
   }
-
+  // TỔNG SỐ TRANG
   const totalPages = Math.max(Math.ceil(savedJobs.length / jobsPerPage), 1);
   const validCurrentPage = Math.min(currentPage, totalPages - 1);
 
@@ -55,7 +69,29 @@ const SaveJobsPage: React.FC<SaveJobsPageProps> = ({ savedJobs }) => {
     const targetPage = Math.max(0, Math.min(pageNumber, totalPages - 1));
     setCurrentPage(targetPage);
   };
-
+  // HÀM DÙNG ĐỂ XÓA
+  const DeleteSaveJob = async (jobId: number) => {
+    try {
+      console.log('jobID', jobId,candidateId);
+      setDelete(jobId);
+      
+      const response = await ApiRequestSave.DeleteJob(candidateId!, jobId);
+      console.log('response khi xóa', response)
+      if (response.status === 200) {
+        alert('Xóa công việc đã lưu thành công');
+        // Thay vì reload toàn bộ trang, cập nhật state
+        const newSavedJobs = savedJobs?.filter(job => job.jobId !== jobId) ?? [];
+        window.location.reload(); // Có thể bỏ dòng này nếu dùng cách cập nhật state
+      } else {
+        throw new Error('Xóa thất bại');
+      }
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      alert('Xóa công việc thất bại');
+    } finally {
+      setDelete(null); // Reset trạng thái loading
+    }
+  }
   return (
     <div className="relative flex min-h-screen flex-col bg-gradient-to-b from-gray-50 to-gray-100 p-6 sm:p-12">
       <div className="flex items-center mb-6 ml-4 sm:ml-14">
@@ -114,24 +150,31 @@ const SaveJobsPage: React.FC<SaveJobsPageProps> = ({ savedJobs }) => {
                         </div>
                         <div className="flex items-center space-x-2">
                           <button
-
-                            className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            onClick={() => DeleteSaveJob(job.jobId)}
+                            disabled={Delete === job.jobId}
+                            className={`inline-flex items-center justify-center rounded-lg 
+          ${Delete === job.jobId ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'} 
+          px-4 py-2 text-sm font-medium text-white transition-colors`}
                           >
-                            Xóa
-                            <svg
-                              className="ml-2 h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
+                            {Delete === job.jobId ? (
+                              <>
+                                <span className="animate-spin mr-2">⏳</span>
+                                Đang xóa...
+                              </>
+                            ) : (
+                              <>
+                                Xóa
+                                <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-5 5m0 0l-5-5m5 5H6" />
+                                </svg>
+                              </>
+                            )}
                           </button>
                           <Link
                             href={`/jobs/${job.jobId}`}
                             className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                           >
-                            Ứng tuyển 
+                            Ứng tuyển
                             <svg
                               className="ml-2 h-4 w-4"
                               fill="none"

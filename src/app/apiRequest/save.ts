@@ -12,6 +12,9 @@ const ApiRequestSave = {
                     Authorization: `Bearer ${sessionToken}`
                 }
             });
+    },
+    DeleteJob : (candidateId:number,jobId:number) =>{
+        return http.delete<SaveresType> (`/save/delete/${candidateId}/${jobId}`) 
     }
 };
 

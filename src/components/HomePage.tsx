@@ -114,7 +114,6 @@ export default function HomePage() {
   };
 
 
-
   // Hàm dùng để reset jobs
   const handleResetFilters = () => {
     setFilters({
