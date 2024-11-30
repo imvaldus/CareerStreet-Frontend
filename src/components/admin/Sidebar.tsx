@@ -113,7 +113,7 @@ export default function HomePage() {
             </div>
 
             <Link
-              href="/admin/blog"
+              href="/blog"
               className="flex items-center px-4 py-2 mt-2 text-gray-100 hover:bg-gray-700 rounded-lg"
             >
               <span>Blog</span>
