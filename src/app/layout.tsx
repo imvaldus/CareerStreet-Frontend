@@ -4,7 +4,7 @@
 
 import localFont from "next/font/local";
 import "./globals.css";
-import { usePathname } from "next/navigation"; // Import usePathname
+import { usePathname } from "next/navigation";
 
 import Layout from "@/components/Layout";
 import LayoutCandidate from "@/components/candidate/LayoutCandidate";
@@ -13,8 +13,8 @@ import LayoutJobs from "@/components/jobs/LayoutJobs";
 import LayoutEmployer from "@/components/employer/LayoutEmployer";
 import LayoutLogin from "@/components/candidate/LayoutLogin";
 import LayoutAdmin from "@/components/admin/LayoutAdmin";
-import { JobProvider } from "./context/JobContext";
 import LayoutLoginAdmin from "@/components/admin/LayoutLoginAdmin";
+import { JobProvider } from "./context/JobContext";
 import { CandidateProvider } from "./context/CandidateContext";
 import { ApplyProvider } from "./context/ApplyContext";
 import { AccountProvider } from "./context/AccountContext";
@@ -24,6 +24,7 @@ const geistSans = localFont({
   variable: "--font-geist-sans",
   weight: "100 900",
 });
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
@@ -37,23 +38,29 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname(); // Lấy đường dẫn hiện tại
 
-  // Kiểm tra đường dẫn hiện tại
-  const isHomePage = pathname === "/"; // Đường dẫn cho trang home
-  const isCandidatePage = pathname.startsWith("/candidate"); // Kiểm tra nếu đường dẫn bắt đầu bằng "/candidate"
-  const isJobsPage = pathname.startsWith("/jobs"); // Kiểm tra nếu đường dẫn bắt đầu bằng "/jobs"
-  const isEmployerPage = pathname.startsWith("/employer"); // Kiểm tra nếu đường dẫn bắt đầu bằng "/jobs"
-  const isLoginPage =
-    pathname.startsWith("/login") || pathname.startsWith("/register"); // Kiểm tra nếu đường dẫn bắt đầu bằng "/jobs"
-  const isAdminPage = pathname.startsWith("/admin"); // Kiểm tra nếu đường dẫn bắt đầu bằng "/admin"
-  const isAdminLoginPage = pathname.startsWith("/admin/login"); // Kiểm tra nếu đường dẫn bắt đầu bằng "/admin"
+  const isHomePage = pathname === "/";
+  const isCandidatePage = pathname.startsWith("/candidate");
+  const isJobsPage = pathname.startsWith("/jobs");
+  const isEmployerPage = pathname.startsWith("/employer");
+  const isLoginPage = pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isAdminPage = pathname.startsWith("/admin");
+  const isAdminLoginPage = pathname.startsWith("/admin/login");
+  const isBlogPage = pathname.startsWith("/blog");
+
+  // Suppress specific Grammarly extension warnings
+  const suppressGrammarlyWarnings = {
+    suppressHydrationWarning: true,
+    'data-new-gr-c-s-check-loaded': undefined,
+    'data-gr-ext-installed': undefined
+  };
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        {...suppressGrammarlyWarnings}
       >
         <div className="scroll-m-0">
-          {/* Các logic kiểm tra đường dẫn và bọc các Provider khác */}
           {isHomePage ? (
             <JobProvider>
               <Layout>{children}</Layout>
@@ -72,7 +79,7 @@ export default function RootLayout({
             </ApplyProvider>
           ) : isEmployerPage ? (
             <ApplyProvider>
-            <LayoutEmployer>{children}</LayoutEmployer>
+              <LayoutEmployer>{children}</LayoutEmployer>
             </ApplyProvider>
           ) : isAdminLoginPage ? (
             <LayoutLoginAdmin>{children}</LayoutLoginAdmin>
@@ -86,6 +93,8 @@ export default function RootLayout({
             </CandidateProvider>
           ) : isLoginPage ? (
             <LayoutLogin>{children}</LayoutLogin>
+          ) : isBlogPage ? (
+            <Layout>{children}</Layout>
           ) : (
             <ErrorPage />
           )}
