@@ -12,9 +12,7 @@ import {
 import jobApiRequest from "@/app/apiRequest/job";
 import { TechListResType } from "@/app/schemaValidations/tech.schema";
 import techApiRequest from "@/app/apiRequest/tech";
-import {
-  TechDetailCreateBodyType,
-} from "@/app/schemaValidations/techDetail.schema";
+import { TechDetailCreateBodyType } from "@/app/schemaValidations/techDetail.schema";
 import { useCookies } from "react-cookie";
 
 interface JobFormData {
@@ -61,7 +59,7 @@ export default function AddJobPage({
     title: "",
     jobLocation: "",
     salary: "",
-    numberOfRecruitment:0,
+    numberOfRecruitment: 0,
     jobDescription: "",
     jobRequirements: "",
     benefits: "",
@@ -325,44 +323,46 @@ export default function AddJobPage({
           levelId: formData.levelId, // ID cấp độ
           status: 0, // Trạng thái
           views: 0, // Số lượt xem
-          levelName:"",
+          levelName: "",
         };
 
         // Gửi yêu cầu tạo công việc và nhận phản hồi
-      const jobResult = await jobApiRequest.createJob(jobData);
-      console.log(jobResult);
+        const jobResult = await jobApiRequest.createJob(jobData);
+        console.log(jobResult);
 
-      // Lấy jobId từ kết quả trả về (giả sử ID công việc nằm trong jobResult.payload.id)
-      const jobId = jobResult.payload.data.jobId; // Cập nhật theo cấu trúc thực tế của phản hồi từ API
+        // Lấy jobId từ kết quả trả về (giả sử ID công việc nằm trong jobResult.payload.id)
+        const jobId = jobResult.payload.data.jobId; // Cập nhật theo cấu trúc thực tế của phản hồi từ API
 
-      // Tạo đối tượng dữ liệu cho TechDetail
-      const techDetailData: TechDetailCreateBodyType = {
-        jobId: jobId, // Sử dụng jobId vừa lấy
-        techIds: techIdsArray, // Đảm bảo techIds là mảng các ID
-      };
+        // Tạo đối tượng dữ liệu cho TechDetail
+        const techDetailData: TechDetailCreateBodyType = {
+          jobId: jobId, // Sử dụng jobId vừa lấy
+          techIds: techIdsArray, // Đảm bảo techIds là mảng các ID
+        };
 
-      // Gửi yêu cầu tạo chi tiết công nghệ
-      try {
-        const techDetailResult = await techApiRequest.createTechDetail(techDetailData);
-        console.log(techDetailResult);
-        console.log(techDetailData);
+        // Gửi yêu cầu tạo chi tiết công nghệ
+        try {
+          const techDetailResult = await techApiRequest.createTechDetail(
+            techDetailData
+          );
+          console.log(techDetailResult);
+          console.log(techDetailData);
 
-        Alert.success("Thành công!", techDetailResult.payload.message); // Hiển thị thông báo thành công cho techDetail
+          Alert.success("Thành công!", techDetailResult.payload.message); // Hiển thị thông báo thành công cho techDetail
+        } catch (error) {
+          console.error("Error creating tech detail:", error);
+          Alert.error("Lỗi!", "Đã xảy ra lỗi khi tạo chi tiết công nghệ.");
+        }
+
+        // Hiển thị thông báo thành công cho job
+        Alert.success("Thành công!", jobResult.payload.message);
+        router.push("/employer/jobs"); // Chuyển hướng về trang danh sách công việc
+        router.refresh(); // Làm mới trang
       } catch (error) {
-        console.error("Error creating tech detail:", error);
-        Alert.error("Lỗi!", "Đã xảy ra lỗi khi tạo chi tiết công nghệ.");
+        console.error("Error creating job:", error);
+        Alert.error("Lỗi!", "Đã xảy ra lỗi khi tạo công việc.");
       }
-
-      // Hiển thị thông báo thành công cho job
-      Alert.success("Thành công!", jobResult.payload.message);
-      router.push("/employer/jobs"); // Chuyển hướng về trang danh sách công việc
-      router.refresh(); // Làm mới trang
-    } catch (error) {
-      console.error("Error creating job:", error);
-      Alert.error("Lỗi!", "Đã xảy ra lỗi khi tạo công việc.");
     }
-  }
-};
+  };
 
   return (
     <>
@@ -467,7 +467,7 @@ export default function AddJobPage({
               <span className="text-red-500 text-sm">{errors.title}</span>
             )}
 
-<label className="block mb-2" htmlFor="numberOfRecruitment">
+            <label className="block mb-2" htmlFor="numberOfRecruitment">
               Số lượng tuyển*
             </label>
             <input
@@ -715,6 +715,13 @@ export default function AddJobPage({
                 <option value="Nhân viên">Nhân viên</option>
                 <option value="Quản lý">Quản lý</option>
                 <option value="Giám đốc">Giám đốc</option>
+                <option value="Trưởng phòng">Trưởng phòng</option>
+                <option value="Phó giám đốc">Phó giám đốc</option>
+                <option value="Giám đốc điều hành">Giám đốc điều hành</option>
+                <option value="Chuyên gia">Chuyên gia</option>
+                <option value="Tư vấn">Tư vấn</option>
+                <option value="Lãnh đạo">Lãnh đạo</option>
+                <option value="Giám sát">Giám sát</option>
               </select>
               {errors.jobRank && (
                 <span className="text-red-500 text-sm">{errors.jobRank}</span>
@@ -735,6 +742,8 @@ export default function AddJobPage({
                 <option value="Toàn thời gian">Toàn thời gian</option>
                 <option value="Bán thời gian">Bán thời gian</option>
                 <option value="Thực tập">Thực tập</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Remote">Remote</option>
               </select>
               {errors.jobType && (
                 <span className="text-red-500 text-sm">{errors.jobType}</span>
@@ -909,7 +918,9 @@ export default function AddJobPage({
                 hạn trong: <span className="font-bold">{x} Ngày tới </span>
               </span>
               <div className="flex items-center mb-2">
-                <p className="numberOfRecruitment-job">Số lượng tuyển: {formData.numberOfRecruitment}</p>
+                <p className="numberOfRecruitment-job">
+                  Số lượng tuyển: {formData.numberOfRecruitment}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2 mb-4"></div>

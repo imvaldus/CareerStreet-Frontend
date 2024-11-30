@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import authApiRequest from "./app/apiRequest/auth";
 
-const authPaths = ["/login", "/register", "/admin/login", "/jobs", "/blog"]; // Đường dẫn không yêu cầu đăng nhập
+const authPaths = ["/login", "/register", "/admin/login", "/jobs"]; // Đường dẫn không yêu cầu đăng nhập
 const adminPath = "/admin"; // Đường dẫn admin
 const employerPath = "/employer"; // Đường dẫn employer
 const candidatePath = "/"; // Đường dẫn candidate
@@ -47,11 +47,7 @@ export async function middleware(request: NextRequest) {
       if (!pathname.startsWith(adminPath)) {
         return NextResponse.redirect(new URL(adminPath, request.url));
       }
-      // Cho phép truy cập /blog
-      if (pathname === "/blog" || pathname.startsWith("/blog")) {
-        return NextResponse.next();
-      }
-      // Không cho phép truy cập vào các trang authPaths khác
+      // Không cho phép truy cập vào các trang authPaths
       if (authPaths.some((path) => pathname.startsWith(path))) {
         return NextResponse.redirect(new URL(adminPath, request.url));
       }
@@ -61,15 +57,11 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith(adminPath)) {
         return NextResponse.redirect(new URL("/", request.url));
       }
-      // Cho phép truy cập /blog
-      if (pathname === "/blog" || pathname.startsWith("/blog")) {
-        return NextResponse.next();
-      }
       // Cho phép truy cập vào các trang liên quan đến employer
       if (pathname !== employerPath && !pathname.startsWith(employerPath)) {
         return NextResponse.redirect(new URL(employerPath, request.url));
       }
-      // Không cho phép truy cập vào các trang authPaths khác
+      // Không cho phép truy cập vào các trang authPaths
       if (authPaths.some((path) => pathname.startsWith(path))) {
         return NextResponse.redirect(new URL(employerPath, request.url));
       }
@@ -79,9 +71,8 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith(adminPath) || pathname.startsWith(employerPath)) {
         return NextResponse.redirect(new URL("/", request.url));
       }
-      // Cho phép candidate truy cập "/jobs" và "/blog"
-      if (pathname === "/jobs" || pathname.startsWith("/jobs") || 
-          pathname === "/blog" || pathname.startsWith("/blog")) {
+      // Cho phép candidate truy cập "/jobs"
+      if (pathname === "/jobs" || pathname.startsWith("/jobs")) {
         return NextResponse.next();
       }
       // Chuyển hướng về trang candidate nếu không phải trang đó
