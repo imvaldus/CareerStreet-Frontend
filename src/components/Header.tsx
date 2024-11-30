@@ -53,91 +53,10 @@ export default function Header() {
               <li className="relative group">
                 <Link
                   className="text-gray-800 text-xs hover:text-blue-600 transition-colors duration-300 flex items-center"
-                  href="#"
+                  href="/jobs"
                 >
-                  Việc làm IT
-                  <MdExpandMore className="ml-2 w-4 h-4" />{" "}
-                  {/* Sử dụng biểu tượng mới */}
+                  Việc làm IT                  
                 </Link>
-                <span className="absolute bottom-[-2px] left-0 right-0 h-[2px] bg-blue-600 scale-x-0 transition-transform duration-300 group-hover:scale-x-100"></span>
-
-                {/* Dropdown Menu */}
-                <ul className="absolute left-0 top-full mt-2 w-48 bg-white shadow-lg rounded-md opacity-0 group-hover:opacity-100 transform group-hover:translate-y-0 translate-y-1 transition-all duration-300 z-10">
-                  <li className="relative group">
-                    <Link
-                      className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center"
-                      href="#"
-                    >
-                      Theo cấp bậc
-                      <MdChevronRight className="ml-12 w-4 h-4" />{" "}
-                      {/* Sử dụng biểu tượng mới */}
-                    </Link>
-                    {/* Submenu */}
-                    <ul className="absolute left-full top-0 mt-0 ml-2 w-48 bg-white shadow-lg rounded-md opacity-0 group-hover:opacity-100 transform group-hover:translate-x-0 translate-x-1 transition-all duration-300 z-10">
-                      <li>
-                        <Link
-                          className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                          href="#"
-                        >
-                          Junior 1
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                          href="#"
-                        >
-                          Mid-Level 1
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                          href="#"
-                        >
-                          Senior 1
-                        </Link>
-                      </li>
-                    </ul>
-                  </li>
-                  <li className="relative group">
-                    <Link
-                      className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center"
-                      href="#"
-                    >
-                      Theo kỹ năng
-                      <MdChevronRight className="ml-12 w-4 h-4" />{" "}
-                      {/* Sử dụng biểu tượng mới */}
-                    </Link>
-                    {/* Submenu */}
-                    <ul className="absolute left-full top-0 mt-0 ml-2 w-48 bg-white shadow-lg rounded-md opacity-0 group-hover:opacity-100 transform group-hover:translate-x-0 translate-x-1 transition-all duration-300 z-10">
-                      <li>
-                        <Link
-                          className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                          href="#"
-                        >
-                          Junior 2
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                          href="#"
-                        >
-                          Mid-Level 2
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                          href="#"
-                        >
-                          Senior 2
-                        </Link>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
               </li>
 
               {/* <li className="relative group">
@@ -153,40 +72,10 @@ export default function Header() {
               <li className="relative group">
                 <Link
                   className="text-xs text-gray-800 hover:text-blue-600 transition-colors duration-300 flex items-center"
-                  href="#"
+                  href="/blog"
                 >
                   Blog IT
-                  <MdExpandMore className="ml-2 w-4 h-4" />{" "}
-                  {/* Sử dụng biểu tượng mới */}
-                </Link>
-                <span className="absolute bottom-[-2px] left-0 right-0 h-[2px] bg-blue-600 scale-x-0 transition-transform duration-300 group-hover:scale-x-100"></span>
-                {/* Dropdown Menu */}
-                <ul className="absolute left-0 top-full mt-2 w-48 bg-white shadow-lg rounded-md opacity-0 group-hover:opacity-100 transform group-hover:translate-y-0 translate-y-1 transition-all duration-300 z-10">
-                  <li>
-                    <Link
-                      className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                      href="#"
-                    >
-                      Công nghệ thông tin
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                      href="#"
-                    >
-                      Trí tuệ nhân tạo
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      className="text-xs block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                      href="#"
-                    >
-                      Phần mềm
-                    </Link>
-                  </li>
-                </ul>
+                </Link>     
               </li>
             </ul>
           </div>
@@ -249,7 +138,7 @@ export default function Header() {
                 <li>
                   <Link
                     className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200"
-                    href="candidate/saved"
+                    href="/candidate/saved"
                   >
                     Việc đã lưu
                   </Link>
