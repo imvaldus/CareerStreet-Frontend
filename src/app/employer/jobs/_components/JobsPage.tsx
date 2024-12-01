@@ -6,8 +6,10 @@ import { AiOutlineSearch } from "react-icons/ai";
 
 export default function JobsPage({
   jobList,
+  numberOfApplications,
 }: {
   jobList: JobListResType["data"] | null;
+  numberOfApplications?: { [key: number]: number };
 }) {
   const [selectedStatus, setSelectedStatus] = useState(3); // Mặc định là tất cả công việc
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -154,15 +156,21 @@ export default function JobsPage({
                       {job.postingDate} - {job.expirationDate}
                     </p>
                   </td>
-                  <td className="py-2 px-4">0</td>
+                  <td className="py-2 px-4">{numberOfApplications?.[job.jobId] ?? 0}</td>
                   <td className="py-2 px-4">{job.views}</td>
                   <td className="py-2 px-4">
-                    <Link
-                      href={`/employer/jobs/${job.jobId}/edit`}
-                      className="text-blue-500 hover:underline"
-                    >
-                      Sửa
-                    </Link>
+                    {(numberOfApplications?.[job.jobId] ?? 0) > 0 ? (
+                      <span className="text-gray-400 cursor-not-allowed" title="Không thể sửa vì đã có đơn ứng tuyển">
+                        Sửa
+                      </span>
+                    ) : (
+                      <Link
+                        href={`/employer/jobs/${job.jobId}/edit`}
+                        className="text-blue-500 hover:underline"
+                      >
+                        Sửa
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}
