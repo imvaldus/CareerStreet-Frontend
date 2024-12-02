@@ -135,7 +135,7 @@ export default function JobsPage({
           {" "}
           {/* Thêm margin-right cho cột 1 */}
           {/* Banner Image */}
-          <div className="banner mb-4 w-full rounded-lg">
+          <div className="banner m-8 w-full rounded-lg">
             <img
               src="/images/logo.png" // Thay thế URL này bằng URL của hình ảnh banner bạn muốn
               alt="Banner"
