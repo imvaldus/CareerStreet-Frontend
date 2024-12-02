@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import blogApiRequest from "@/app/apiRequest/blog";
 import Alert from "@/components/Alert";
@@ -63,6 +63,40 @@ const BLOG_THEMES = [
   }
 ];
 
+// Từ điển các từ khóa chủ đề
+const THEME_KEYWORDS = {
+  programming: {
+    primary: ["lập trình", "programming", "code", "coding"],
+    secondary: ["algorithm", "function", "biến", "vòng lặp", "hàm", "thuật toán", "debug", "compiler"],
+    frameworks: ["java", "python", "c++", "javascript", "php", "ruby", "swift", "golang"]
+  },
+  web: {
+    primary: ["web", "frontend", "backend", "fullstack"],
+    secondary: ["responsive", "website", "webapp", "server", "client"],
+    frameworks: ["react", "angular", "vue", "nextjs", "nodejs", "express", "django", "laravel", "html", "css"]
+  },
+  mobile: {
+    primary: ["mobile", "android", "ios", "app"],
+    secondary: ["smartphone", "tablet", "ứng dụng di động", "mobile app"],
+    frameworks: ["react native", "flutter", "kotlin", "swift", "xamarin", "ionic"]
+  },
+  ai: {
+    primary: ["ai", "machine learning", "deep learning", "trí tuệ nhân tạo"],
+    secondary: ["neural network", "học máy", "mạng neural", "training", "model", "dataset"],
+    frameworks: ["tensorflow", "pytorch", "keras", "scikit-learn", "opencv", "nlp"]
+  },
+  cloud: {
+    primary: ["cloud", "đám mây", "server", "hosting"],
+    secondary: ["scale", "deployment", "container", "microservice", "serverless"],
+    frameworks: ["aws", "azure", "gcp", "docker", "kubernetes", "devops", "ci/cd"]
+  },
+  security: {
+    primary: ["security", "bảo mật", "hack", "cybersecurity", "an ninh mạng"],
+    secondary: ["firewall", "encryption", "mã hóa", "bảo vệ", "vulnerability", "lỗ hổng"],
+    frameworks: ["penetration testing", "cryptography", "ssl", "authentication", "authorization"]
+  }
+};
+
 export default function AddBlogPage() {
   const router = useRouter();
   const [selectedTheme, setSelectedTheme] = useState(BLOG_THEMES[0].id);
@@ -71,12 +105,13 @@ export default function AddBlogPage() {
     author: "",
     title: "",
     content: "",
-    description: "",
     date: new Date().toISOString().split('T')[0],
     origin: "",
     category: BLOG_THEMES[0].id,
     admin_id: 1,
   });
+
+  const debounceTimer = useRef<NodeJS.Timeout>();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -86,6 +121,24 @@ export default function AddBlogPage() {
       ...prev,
       [name]: value
     }));
+
+    // Use debounce for theme detection
+    if (name === 'title' || name === 'content') {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = setTimeout(() => {
+        const newContent = name === 'content' ? value : formData.content;
+        const newTitle = name === 'title' ? value : formData.title;
+        const detectedTheme = detectTheme(newContent, newTitle);
+        
+        if (detectedTheme !== selectedTheme) {
+          setSelectedTheme(detectedTheme);
+          setFormData(prev => ({
+            ...prev,
+            category: detectedTheme
+          }));
+        }
+      }, 300); // Wait for 300ms of no typing before updating theme
+    }
   };
 
   const handleThemeSelect = (themeId: string) => {
@@ -113,6 +166,125 @@ export default function AddBlogPage() {
   };
 
   const currentTheme = BLOG_THEMES.find(theme => theme.id === selectedTheme) || BLOG_THEMES[0];
+
+  // Hàm phát hiện chủ đề dựa trên nội dung
+  const detectTheme = (content: string, title: string) => {
+    const lowercaseContent = content.toLowerCase();
+    const lowercaseTitle = title.toLowerCase();
+    const combinedText = `${lowercaseTitle} ${lowercaseContent}`;
+    
+    // Calculate scores for each theme
+    const themeScores = Object.entries(THEME_KEYWORDS).reduce((scores, [theme, keywords]) => {
+      let score = 0;
+      
+      // Check title matches (higher weight)
+      const titleScore = 
+        keywords.primary.filter(word => lowercaseTitle.includes(word)).length * 5 +
+        keywords.secondary.filter(word => lowercaseTitle.includes(word)).length * 3 +
+        keywords.frameworks.filter(word => lowercaseTitle.includes(word)).length * 4;
+      
+      // Check content matches
+      const contentScore = 
+        keywords.primary.filter(word => lowercaseContent.includes(word)).length * 3 +
+        keywords.secondary.filter(word => lowercaseContent.includes(word)).length * 2 +
+        keywords.frameworks.filter(word => lowercaseContent.includes(word)).length * 2.5;
+      
+      // Additional points for exact phrase matches
+      const exactPhraseBonus = keywords.primary
+        .filter(phrase => combinedText.includes(phrase))
+        .length * 2;
+      
+      // Calculate final score
+      score = titleScore + contentScore + exactPhraseBonus;
+      
+      // Bonus points for multiple keyword matches from the same category
+      const uniqueMatches = new Set([
+        ...keywords.primary.filter(word => combinedText.includes(word)),
+        ...keywords.secondary.filter(word => combinedText.includes(word)),
+        ...keywords.frameworks.filter(word => combinedText.includes(word))
+      ]).size;
+      
+      if (uniqueMatches > 2) {
+        score *= 1.5; // 50% bonus for diverse keyword matches
+      }
+      
+      return { ...scores, [theme]: score };
+    }, {} as Record<string, number>);
+    
+    // Get top 2 themes
+    const sortedThemes = Object.entries(themeScores)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 2);
+    
+    // Debug log for theme scores
+    console.log('Theme Scores:', themeScores);
+    
+    // If no significant matches, return default
+    if (sortedThemes[0][1] === 0) {
+      return BLOG_THEMES[0].id;
+    }
+    
+    // If the top theme has a significantly higher score
+    if (sortedThemes[0][1] >= sortedThemes[1][1] * 1.5) {
+      return sortedThemes[0][0];
+    }
+    
+    // Special case: AI-related content with multiple themes
+    if (sortedThemes.some(([theme]) => theme === 'ai') && 
+        Math.abs(sortedThemes[0][1] - sortedThemes[1][1]) < 5) {
+      return 'ai';
+    }
+    
+    // Return the highest scoring theme
+    return sortedThemes[0][0];
+  };
+
+  // Add theme descriptions
+  const getThemeDescription = (themeId: string) => {
+    switch (themeId) {
+      case 'programming': return 'Các bài viết về lập trình cơ bản';
+      case 'web': return 'Phát triển ứng dụng web';
+      case 'mobile': return 'Phát triển ứng dụng di động';
+      case 'ai': return 'Trí tuệ nhân tạo và máy học';
+      case 'cloud': return 'Điện toán đám mây';
+      case 'security': return 'Bảo mật và an ninh mạng';
+      default: return '';
+    }
+  };
+
+  // Add theme colors
+  const getBgColor = (themeId: string) => {
+    switch (themeId) {
+      case 'programming': return 'bg-blue-50';
+      case 'web': return 'bg-green-50';
+      case 'mobile': return 'bg-yellow-50';
+      case 'ai': return 'bg-purple-50';
+      case 'cloud': return 'bg-cyan-50';
+      case 'security': return 'bg-red-50';
+      default: return 'bg-blue-50';
+    }
+  };
+
+  const getBorderColor = (themeId: string) => {
+    switch (themeId) {
+      case 'programming': return 'border-blue-500';
+      case 'web': return 'border-green-500';
+      case 'mobile': return 'border-yellow-500';
+      case 'ai': return 'border-purple-500';
+      case 'cloud': return 'border-cyan-500';
+      case 'security': return 'border-red-500';
+      default: return 'border-blue-500';
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="container mx-auto p-6">
@@ -186,18 +358,6 @@ export default function AddBlogPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả ngắn</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent h-24"
-                  required
-                  placeholder="Mô tả ngắn về nội dung blog..."
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Nội dung</label>
                 <textarea
                   name="content"
@@ -220,22 +380,29 @@ export default function AddBlogPage() {
               {BLOG_THEMES.map((theme) => {
                 const isSelected = selectedTheme === theme.id;
                 const IconComponent = theme.icon;
+                const bgColor = getBgColor(theme.id);
+                const borderColor = getBorderColor(theme.id);
                 
                 return (
                   <button
                     key={theme.id}
                     onClick={() => handleThemeSelect(theme.id)}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                       isSelected 
-                        ? `${theme.textColor} border-current bg-opacity-10 bg-current` 
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? `${bgColor} border-2 ${borderColor}` 
+                        : 'bg-white hover:bg-gray-50 border border-gray-200'
                     }`}
                   >
-                    <div className={`w-full aspect-square rounded-lg mb-3 bg-gradient-to-br ${theme.gradient} flex items-center justify-center`}>
-                      <IconComponent className={`text-2xl ${isSelected ? 'text-current' : 'text-gray-600'}`} />
+                    <div className={`shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br ${theme.gradient} flex items-center justify-center`}>
+                      <IconComponent className={`text-xl ${isSelected ? theme.textColor : 'text-gray-600'}`} />
                     </div>
-                    <div className="text-sm font-medium truncate">
-                      {theme.label}
+                    <div className="flex-1 text-left">
+                      <div className={`text-sm font-medium ${isSelected ? theme.textColor : 'text-gray-700'}`}>
+                        {theme.label}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {getThemeDescription(theme.id)}
+                      </div>
                     </div>
                   </button>
                 );
@@ -272,11 +439,6 @@ export default function AddBlogPage() {
                   <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
                     {formData.title || "Tiêu đề blog"}
                   </h3>
-
-                  {/* Description */}
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {formData.description || "Mô tả sẽ xuất hiện ở đây..."}
-                  </p>
 
                   {/* Content Preview */}
                   <div className="border-t pt-3">
