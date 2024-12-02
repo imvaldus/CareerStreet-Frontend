@@ -5,6 +5,7 @@ import blogApiRequest from "@/app/apiRequest/blog";
 import Alert from "@/components/Alert";
 import { Blog } from "@/app/schemaValidations/blog.schema";
 import BlogPreview from "./BlogPreview";
+import { BLOG_THEMES, detectTheme } from "@/app/admin/_components/HomeBlog";
 
 export default function EditBlogForm({ blogId }: { blogId: number }) {
   const router = useRouter();
@@ -14,20 +15,20 @@ export default function EditBlogForm({ blogId }: { blogId: number }) {
     author: "",
     date: new Date().toISOString().split('T')[0],
     origin: "",
-    admin_id: 1
+    admin_id: 1,
+    category: ""
   });
 
   useEffect(() => {
     const fetchBlogData = async () => {
       try {
         const blogData = await blogApiRequest.getBlogById(blogId);
+        const data = blogData.payload.data;
+        const detectedTheme = detectTheme(data.content, data.title);
+        
         setFormData({
-          title: blogData.payload.data.title,
-          content: blogData.payload.data.content,
-          author: blogData.payload.data.author,
-          date: blogData.payload.data.date,
-          origin: blogData.payload.data.origin,
-          admin_id: blogData.payload.data.admin_id,
+          ...data,
+          category: detectedTheme
         });
       } catch (error) {
         console.error("Error fetching blog data:", error);
@@ -36,6 +37,17 @@ export default function EditBlogForm({ blogId }: { blogId: number }) {
     };
     fetchBlogData();
   }, [blogId]);
+
+  // Tự động cập nhật theme khi nội dung hoặc tiêu đề thay đổi
+  useEffect(() => {
+    const newTheme = detectTheme(formData.content, formData.title);
+    if (newTheme !== formData.category) {
+      setFormData(prev => ({
+        ...prev,
+        category: newTheme
+      }));
+    }
+  }, [formData.content, formData.title]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

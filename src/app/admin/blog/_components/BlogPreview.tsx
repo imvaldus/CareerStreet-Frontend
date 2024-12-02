@@ -1,5 +1,7 @@
 "use client";
 import { Blog } from "@/app/schemaValidations/blog.schema";
+import { BLOG_THEMES } from "@/app/admin/_components/HomeBlog";
+import { detectTheme } from "@/app/admin/_components/HomeBlog";
 
 export default function BlogPreview({ blog }: { blog: Blog | null }) {
   if (!blog) {
@@ -10,14 +12,24 @@ export default function BlogPreview({ blog }: { blog: Blog | null }) {
     );
   }
 
+  const theme = BLOG_THEMES.find(t => t.id === detectTheme(blog.content, blog.title)) || BLOG_THEMES[0];
+  const IconComponent = theme.icon;
+
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className={`w-full h-48 bg-gradient-to-br ${theme.gradient} flex items-center justify-center relative`}>
+        <IconComponent className="text-4xl text-gray-600" />
+        <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm py-2 text-center">
+          <span className="text-sm text-white font-medium">{theme.label}</span>
+        </div>
+      </div>
+
       <div className="p-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">{blog.title}</h2>
         
         <div className="flex items-center text-gray-600 text-sm mb-4">
           <span className="mr-4">
-            <i className="far fa-user mr-2"></i>
+            <IconComponent className="mr-2 inline" />
             {blog.author}
           </span>
           <span>

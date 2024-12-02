@@ -5,7 +5,8 @@ import blogApiRequest from "@/app/apiRequest/blog";
 import BlogHeader from "./BlogHeader";
 import BlogGrid from "./BlogGrid";
 import Alert from "@/components/Alert";
-import { FaTags, FaRss, FaBookmark, FaEnvelope, FaShieldAlt, FaBrain, FaCloud, FaMobileAlt, FaLaptopCode, FaCode } from "react-icons/fa";
+import { FaTags, FaRss, FaBookmark, FaEnvelope, FaShieldAlt, FaBrain, FaCloud, FaMobileAlt, FaLaptopCode, FaCode, FaUser, FaCalendarAlt, FaEye } from "react-icons/fa";
+import { getBlogTheme, getThemeColor } from "./BlogGrid";
 
 // Danh sách các chủ đề
 const CATEGORIES = [
@@ -17,6 +18,16 @@ const CATEGORIES = [
   { id: "cloud", name: "Cloud Computing", icon: FaCloud },
   { id: "security", name: "Cybersecurity", icon: FaShieldAlt }
 ];
+
+// Thêm từ khóa liên quan cho mỗi category
+const CATEGORY_KEYWORDS = {
+  programming: ["lập trình", "programming", "code", "coding", "developer", "development"],
+  web: ["web", "frontend", "backend", "fullstack", "html", "css", "javascript", "react", "nextjs"],
+  mobile: ["mobile", "android", "ios", "react native", "flutter", "app"],
+  ai: ["ai", "ml", "machine learning", "artificial intelligence", "deep learning", "neural network"],
+  cloud: ["cloud", "aws", "azure", "google cloud", "serverless", "docker", "kubernetes"],
+  security: ["security", "bảo mật", "cybersecurity", "hack", "encryption", "firewall"]
+};
 
 export default function BlogPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -66,11 +77,11 @@ export default function BlogPage() {
       return;
     }
 
-    // Lọc blog dựa trên từ khóa trong tiêu đề hoặc nội dung
+    // Lọc blog dựa trên từ khóa của category
+    const keywords = CATEGORY_KEYWORDS[categoryId as keyof typeof CATEGORY_KEYWORDS] || [];
     const filtered = blogs.filter(blog => {
-      const content = (blog.title + blog.content).toLowerCase();
-      const category = CATEGORIES.find(cat => cat.id === categoryId);
-      return content.includes(category?.name.toLowerCase() || "");
+      const content = (blog.title + " " + blog.content).toLowerCase();
+      return keywords.some(keyword => content.includes(keyword.toLowerCase()));
     });
 
     setFilteredBlogs(filtered);
@@ -86,7 +97,7 @@ export default function BlogPage() {
 
     try {
       setSubscribing(true);
-      // Giả lập API call - thay thế bằng API thật khi có
+      // Giả lập API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       Alert.success("Thành công", "Đăng ký nhận tin thành công!");
       setEmail("");
@@ -121,7 +132,17 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <BlogHeader />
+      <BlogHeader onSearch={(term) => {
+        if (!term.trim()) {
+          setFilteredBlogs(blogs);
+          return;
+        }
+        const filtered = blogs.filter(blog => 
+          blog.title.toLowerCase().includes(term.toLowerCase()) ||
+          blog.content.toLowerCase().includes(term.toLowerCase())
+        );
+        setFilteredBlogs(filtered);
+      }} />
       
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
@@ -187,32 +208,54 @@ export default function BlogPage() {
                   Bài viết nổi bật
                 </h2>
                 <div className="space-y-4">
-                  {featuredBlogs.map(blog => (
-                    <div key={blog.blogId} className="group">
-                      <a 
-                        href={`/blog/${blog.blogId}`}
-                        className="block p-4 rounded-xl transition-all hover:bg-purple-50"
-                      >
-                        <h3 className="font-medium text-gray-800 group-hover:text-purple-600 transition-colors line-clamp-2">
-                          {blog.title}
-                        </h3>
-                        <div className="mt-2 flex items-center text-sm text-gray-500">
-                          <span className="mr-3">{blog.author}</span>
-                          <span>{new Date(blog.date).toLocaleDateString("vi-VN")}</span>
-                        </div>
-                      </a>
-                    </div>
-                  ))}
+                  {featuredBlogs.map(blog => {
+                    const theme = getBlogTheme(blog);
+                    const IconComponent = theme.icon;
+                    const themeColor = getThemeColor(theme.id);
+                    
+                    return (
+                      <div key={blog.blogId} className="group">
+                        <a 
+                          href={`/blog/${blog.blogId}`}
+                          className="flex items-start gap-4 p-4 rounded-xl transition-all hover:bg-gray-50/80"
+                        >
+                          <div className={`relative w-20 h-20 shrink-0 rounded-lg bg-gradient-to-br ${theme.gradient} flex items-center justify-center overflow-hidden`}>
+                            <IconComponent className="text-2xl text-gray-800/30 group-hover:scale-110 transition-transform duration-500" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gray-50 w-fit ${themeColor} text-xs font-medium mb-2`}>
+                              <IconComponent className="text-xs" />
+                              <span>{theme.label}</span>
+                            </div>
+                            <h3 className="font-medium text-gray-800 group-hover:text-purple-600 transition-colors line-clamp-2">
+                              {blog.title}
+                            </h3>
+                            <div className="flex items-center text-sm text-gray-500 mt-1">
+                              <span className="mr-3 flex items-center">
+                                <FaUser className={`mr-1.5 ${themeColor}`} />
+                                {blog.author}
+                              </span>
+                              <span className="mr-3 flex items-center">
+                                <FaCalendarAlt className={`mr-1.5 ${themeColor}`} />
+                                {new Date(blog.date).toLocaleDateString("vi-VN")}
+                              </span>                          
+                            </div>
+                          </div>
+                        </a>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Newsletter Subscription */}
-              <form onSubmit={handleSubscribe} className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-sm p-6 text-white">
+              <form onSubmit={handleSubscribe} className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl shadow-sm p-6">
                 <div className="flex items-center mb-4">
-                  <FaEnvelope className="text-2xl mr-3" />
+                  <FaEnvelope className="text-2xl mr-3 text-purple-600" />
                   <div>
-                    <h2 className="text-xl font-bold">Đăng ký nhận tin</h2>
-                    <p className="text-sm text-purple-100">Cập nhật kiến thức mới nhất về công nghệ</p>
+                    <h2 className="text-xl font-bold text-gray-800">Đăng ký nhận tin</h2>
+                    <p className="text-sm text-gray-600">Cập nhật kiến thức mới nhất về công nghệ</p>
                   </div>
                 </div>
                 <input
@@ -220,16 +263,16 @@ export default function BlogPage() {
                   placeholder="Email của bạn"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 placeholder-purple-100 text-white mb-3 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  className="w-full px-4 py-2 rounded-lg bg-white border border-purple-200 placeholder-gray-400 text-gray-700 mb-3 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                 />
                 <button 
                   type="submit"
                   disabled={subscribing}
-                  className="w-full px-4 py-2 bg-white text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {subscribing ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                       Đang đăng ký...
                     </>
                   ) : (

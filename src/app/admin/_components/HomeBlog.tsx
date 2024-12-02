@@ -21,42 +21,49 @@ import {
   FaMobileAlt,
   FaBrain,
   FaCloud,
-  FaShieldAlt
+  FaShieldAlt,
+  FaTags
 } from "react-icons/fa";
 
 // Mảng các gradient và icon cho từng chủ đề
-const BLOG_THEMES = [
+export const BLOG_THEMES = [
   { 
+    id: 'programming',
     gradient: "from-blue-500/20 to-blue-100/20",
     icon: FaCode,
     label: "Lập trình",
     textColor: "text-blue-600"
   },
   { 
+    id: 'web',
     gradient: "from-green-500/20 to-green-100/20",
     icon: FaLaptopCode,
     label: "Web Development",
     textColor: "text-green-600"
   },
   { 
+    id: 'mobile',
     gradient: "from-yellow-500/20 to-yellow-100/20",
     icon: FaMobileAlt,
     label: "Mobile Development",
     textColor: "text-yellow-600"
   },
   { 
+    id: 'ai',
     gradient: "from-purple-500/20 to-purple-100/20",
     icon: FaBrain,
     label: "AI & ML",
     textColor: "text-purple-600"
   },
   { 
+    id: 'cloud',
     gradient: "from-cyan-500/20 to-cyan-100/20",
     icon: FaCloud,
     label: "Cloud Computing",
     textColor: "text-cyan-600"
   },
   { 
+    id: 'security',
     gradient: "from-red-500/20 to-red-100/20",
     icon: FaShieldAlt,
     label: "Cybersecurity",
@@ -64,10 +71,71 @@ const BLOG_THEMES = [
   }
 ];
 
-// Hàm lấy theme dựa trên ID của blog
-const getBlogTheme = (blogId: number) => {
-  const index = blogId % BLOG_THEMES.length;
-  return BLOG_THEMES[index];
+// Thêm keywords cho mỗi theme
+const THEME_KEYWORDS = {
+  'Lập trình': ["lập trình", "programming", "code", "coding", "developer", "development"],
+  'Web Development': ["web", "frontend", "backend", "fullstack", "html", "css", "javascript", "react", "nextjs"],
+  'Mobile Development': ["mobile", "android", "ios", "react native", "flutter", "app"],
+  'AI & ML': ["ai", "ml", "machine learning", "artificial intelligence", "deep learning", "neural network"],
+  'Cloud Computing': ["cloud", "aws", "azure", "google cloud", "serverless", "docker", "kubernetes"],
+  'Cybersecurity': ["security", "bảo mật", "cybersecurity", "hack", "encryption", "firewall"]
+};
+
+// Hàm phát hiện chủ đề dựa trên nội dung
+export const detectTheme = (content: string, title: string) => {
+  const lowercaseContent = content.toLowerCase();
+  const lowercaseTitle = title.toLowerCase();
+  
+  // Tính điểm cho từng chủ đề
+  const themeScores = BLOG_THEMES.reduce((acc, theme) => {
+    const keywords = THEME_KEYWORDS[theme.label as keyof typeof THEME_KEYWORDS] || [];
+    
+    // Tính điểm cho tiêu đề (trọng số cao hơn)
+    const titleMatches = keywords.filter(keyword => 
+      lowercaseTitle.includes(keyword.toLowerCase())
+    ).length * 3; // Tăng trọng số tiêu đề lên 3
+    
+    // Tính điểm cho nội dung
+    const contentMatches = keywords.filter(keyword => 
+      lowercaseContent.includes(keyword.toLowerCase())
+    ).length;
+
+    // Tổng điểm = điểm tiêu đề + điểm nội dung
+    const totalScore = titleMatches + contentMatches;
+    
+    return { ...acc, [theme.id]: totalScore };
+  }, {} as Record<string, number>);
+
+  // Lấy 2 chủ đề có điểm cao nhất
+  const topThemes = Object.entries(themeScores)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 2);
+
+  // Nếu không có điểm nào
+  if (topThemes[0][1] === 0) {
+    return BLOG_THEMES[0].id;
+  }
+
+  // Nếu chủ đề cao nhất có điểm gấp đôi chủ đề thứ 2, chọn chủ đề cao nhất
+  if (topThemes[0][1] >= topThemes[1][1] * 2) {
+    return topThemes[0][0];
+  }
+
+  // Nếu cả 2 chủ đề có điểm gần bằng nhau và một trong hai là AI
+  const [firstTheme, secondTheme] = topThemes;
+  if (Math.abs(firstTheme[1] - secondTheme[1]) <= 2) {
+    if (firstTheme[0] === "ai" || secondTheme[0] === "ai") {
+      return "ai"; // Ưu tiên AI nếu điểm gần bằng nhau
+    }
+  }
+
+  return topThemes[0][0];
+};
+
+// Hàm lấy theme dựa trên blog
+const getBlogTheme = (blog: Blog) => {
+  const themeId = detectTheme(blog.content, blog.title);
+  return BLOG_THEMES.find(theme => theme.id === themeId) || BLOG_THEMES[0];
 };
 
 export default function HomeBlog() {
@@ -79,6 +147,7 @@ export default function HomeBlog() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [blogToDelete, setBlogToDelete] = useState<number | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<string>("all");
 
   useEffect(() => {
     fetchBlogs();
@@ -130,10 +199,21 @@ export default function HomeBlog() {
   };
 
   const sortedAndFilteredBlogs = blogs
-    .filter(blog =>
-      blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      blog.author.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter(blog => {
+      // Lọc theo search term
+      const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        blog.author.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Lọc theo theme
+      let matchesTheme = true;
+      if (selectedTheme !== "all") {
+        const keywords = THEME_KEYWORDS[selectedTheme as keyof typeof THEME_KEYWORDS] || [];
+        const content = (blog.title + " " + blog.content).toLowerCase();
+        matchesTheme = keywords.some(keyword => content.includes(keyword.toLowerCase()));
+      }
+
+      return matchesSearch && matchesTheme;
+    })
     .sort((a, b) => {
       const order = sortOrder === 'asc' ? 1 : -1;
       if (sortBy === 'date') {
@@ -173,7 +253,7 @@ export default function HomeBlog() {
 
       {/* Search and Filter */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col gap-4">
           <div className="flex-grow">
             <div className="relative">
               <input
@@ -186,6 +266,49 @@ export default function HomeBlog() {
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
           </div>
+
+          {/* Theme filters */}
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setSelectedTheme("all")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center
+                ${selectedTheme === "all"
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-purple-50'}`}
+            >
+              <FaTags className="mr-2" />
+              Tất cả
+              {selectedTheme === "all" && (
+                <span className="ml-2 bg-white bg-opacity-20 px-2 py-0.5 rounded-full text-xs">
+                  {sortedAndFilteredBlogs.length}
+                </span>
+              )}
+            </button>
+            
+            {BLOG_THEMES.map((theme) => {
+              const Icon = theme.icon;
+              return (
+                <button
+                  key={theme.label}
+                  onClick={() => setSelectedTheme(theme.label)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center
+                    ${selectedTheme === theme.label
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-purple-50'}`}
+                >
+                  <Icon className="mr-2" />
+                  {theme.label}
+                  {selectedTheme === theme.label && (
+                    <span className="ml-2 bg-white bg-opacity-20 px-2 py-0.5 rounded-full text-xs">
+                      {sortedAndFilteredBlogs.length}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Existing sort buttons */}
           <div className="flex gap-2">
             <button
               onClick={() => handleSort('date')}
@@ -217,19 +340,19 @@ export default function HomeBlog() {
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="grid gap-px bg-gray-200">
           {sortedAndFilteredBlogs.map((blog) => {
-            const theme = getBlogTheme(blog.blogId);
+            const theme = getBlogTheme(blog);
             const IconComponent = theme.icon;
 
             return (
               <div key={blog.blogId} className="bg-white p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex flex-col sm:flex-row gap-6">
                   {/* Thumbnail */}
-                  <div className="w-full sm:w-48 h-48 rounded-lg overflow-hidden shrink-0">
+                  <div className="w-full sm:w-48 h-48 rounded-lg overflow-hidden shrink-0 relative">
                     <div className={`w-full h-full bg-gradient-to-br ${theme.gradient} flex items-center justify-center group`}>
                       <IconComponent className="text-4xl text-gray-600 transform transition-transform group-hover:scale-110" />
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/10 py-2 text-center">
-                        <span className="text-sm text-white/90">{theme.label}</span>
-                      </div>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm py-2 text-center">
+                      <span className="text-sm text-white font-medium">{theme.label}</span>
                     </div>
                   </div>
 

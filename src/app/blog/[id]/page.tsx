@@ -7,12 +7,6 @@ import {
   FaCalendarAlt, 
   FaUser, 
   FaArrowLeft, 
-  FaCode, 
-  FaLaptopCode, 
-  FaMobileAlt, 
-  FaBrain, 
-  FaCloud, 
-  FaShieldAlt,
   FaLink,
   FaClock,
   FaShareAlt,
@@ -20,57 +14,7 @@ import {
   FaTwitter,
   FaLinkedin
 } from "react-icons/fa";
-
-// Mảng các gradient và icon cho từng chủ đề
-const BLOG_THEMES = [
-  { 
-    gradient: "from-blue-500/20 to-blue-100/20",
-    bgGradient: "from-blue-500/5 via-white to-white",
-    icon: FaCode,
-    label: "Lập trình",
-    textColor: "text-blue-600"
-  },
-  { 
-    gradient: "from-green-500/20 to-green-100/20",
-    bgGradient: "from-green-500/5 via-white to-white",
-    icon: FaLaptopCode,
-    label: "Web Development",
-    textColor: "text-green-600"
-  },
-  { 
-    gradient: "from-yellow-500/20 to-yellow-100/20",
-    bgGradient: "from-yellow-500/5 via-white to-white",
-    icon: FaMobileAlt,
-    label: "Mobile Development",
-    textColor: "text-yellow-600"
-  },
-  { 
-    gradient: "from-purple-500/20 to-purple-100/20",
-    bgGradient: "from-purple-500/5 via-white to-white",
-    icon: FaBrain,
-    label: "AI & ML",
-    textColor: "text-purple-600"
-  },
-  { 
-    gradient: "from-cyan-500/20 to-cyan-100/20",
-    bgGradient: "from-cyan-500/5 via-white to-white",
-    icon: FaCloud,
-    label: "Cloud Computing",
-    textColor: "text-cyan-600"
-  },
-  { 
-    gradient: "from-red-500/20 to-red-100/20",
-    bgGradient: "from-red-500/5 via-white to-white",
-    icon: FaShieldAlt,
-    label: "Cybersecurity",
-    textColor: "text-red-600"
-  }
-];
-
-const getBlogTheme = (blogId: number) => {
-  const index = blogId % BLOG_THEMES.length;
-  return BLOG_THEMES[index];
-};
+import { BLOG_THEMES, detectTheme } from "@/app/admin/_components/HomeBlog";
 
 const estimateReadTime = (content: string): number => {
   const wordsPerMinute = 200;
@@ -116,14 +60,14 @@ export default function BlogDetailPage({ params }: { params: { id: string } }) {
     );
   }
 
-  const theme = getBlogTheme(blog.blogId);
+  const theme = BLOG_THEMES.find(t => t.id === detectTheme(blog.content, blog.title)) || BLOG_THEMES[0];
   const IconComponent = theme.icon;
   const readTime = estimateReadTime(blog.content);
 
   return (
-    <div className={"min-h-screen bg-gradient-to-b " + theme.bgGradient}>
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       {/* Header */}
-      <div className={"bg-gradient-to-br " + theme.gradient}>
+      <div className={`bg-gradient-to-br ${theme.gradient}`}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <nav className="mb-8">
             <Link

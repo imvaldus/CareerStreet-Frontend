@@ -2,8 +2,17 @@
 import { FaLaptopCode, FaSearch } from 'react-icons/fa';
 import { useState } from 'react';
 
-export default function BlogHeader() {
-  const [searchTerm, setSearchTerm] = useState("");
+interface BlogHeaderProps {
+  onSearch: (searchTerm: string) => void;
+}
+
+export default function BlogHeader({ onSearch }: BlogHeaderProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSearch(searchTerm);
+  };
 
   return (
     <div className="relative overflow-hidden">
@@ -34,26 +43,24 @@ export default function BlogHeader() {
               </span>
             </h1>
 
-            {/* Description */}
-            <p className="text-lg text-purple-100/90 max-w-2xl mx-auto mb-8 leading-relaxed">
-              Cập nhật những kiến thức mới nhất về công nghệ, lập trình và phát triển sự nghiệp trong ngành IT
-            </p>
-
-            {/* Search bar */}
-            <div className="max-w-2xl mx-auto">
+            {/* Search */}
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Tìm kiếm bài viết..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-6 py-4 rounded-full bg-white/10 backdrop-blur-sm text-white placeholder-purple-100/70 border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
+                  className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm text-white placeholder-white/60 rounded-full border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 pr-12"
                 />
-                <button className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-full transition-all">
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
                   <FaSearch className="text-white text-xl" />
                 </button>
               </div>
-            </div>           
+            </form>
           </div>
         </div>
       </div>
