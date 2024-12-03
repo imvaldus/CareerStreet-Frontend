@@ -206,7 +206,7 @@ export default function JobPostsManagementPage() {
     if (!job.benefits || job.benefits.length < 50) {
       violations.push({
         type: 'Quyền lợi',
-        description: 'Quyền lợi quá ngắn hoặc không có',
+        description: 'Quyền lợi quá ít hoặc không có',
         severity: 'medium'
       });
     }
