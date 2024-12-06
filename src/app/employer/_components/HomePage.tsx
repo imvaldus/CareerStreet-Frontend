@@ -355,7 +355,7 @@ export default function HomePage() {
                     </td>
                     <td className="px-6 py-4">
                       <Link 
-                        href={`/employer/jobs/${application.applyId}/applies`}
+                        href={`/employer/jobs/${application.jobId}/applies`}
                         className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                       >
                         Xem chi tiết
