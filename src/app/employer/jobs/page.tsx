@@ -58,7 +58,6 @@ export default async function EmployerJobsPage() {
       try {
         const response = await applyApiRequest.getApplicationCount(job.jobId);
         const count = response.payload.data || 0;
-        console.log("Number of applications for job " + job.jobId + ": " + count);
         return { jobId: job.jobId, count };
       } catch (error) {
         console.error(`Error fetching applications for job ${job.jobId}:`, error);

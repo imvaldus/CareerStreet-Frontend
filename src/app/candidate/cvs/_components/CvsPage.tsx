@@ -18,11 +18,11 @@ export default function CvsPage({
     try {
       const result = await cvApiRequest.deleteCv(id);
   
-      Alert.success("Thành công!", result.payload.message);
+      Alert.success("CV_DELETE_SUCCESS");
       router.push("/candidate/cvs");
       router.refresh();
     } catch (error) {
-      Alert.error("Lỗi", "Lỗi khi xóa hồ sơ");
+      Alert.error("CV_DELETE_ERROR");
     }
   };
   
@@ -73,7 +73,7 @@ export default function CvsPage({
                     <p className="text-slate-600 text-sm">
                       Kinh nghiệm: {cv.experience} năm
                     </p>
-                    <p className="text-slate-600 text-sm">Vị trí: {cv.level}</p>
+                    <p className="text-slate-600 text-sm">Vị trí: {cv.levelId}</p>
                   </div>
                 ))
               ) : (

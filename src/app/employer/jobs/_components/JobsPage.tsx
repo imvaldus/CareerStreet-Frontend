@@ -37,6 +37,7 @@ import {
   FaBuilding
 } from "react-icons/fa";
 import { MdLocationOn, MdCardGiftcard, MdWork } from "react-icons/md";
+import { MessageUtils } from "@/utils/messageUtils";
 
 export default function JobsPage({
   jobList,
@@ -192,25 +193,25 @@ export default function JobsPage({
     totalApplications: filteredJobs?.reduce((sum, job) => sum + (numberOfApplications?.[job.jobId] || 0), 0) || 0
   };
 
-  const checkViolations = (job: any): { 
-    type: string; 
-    description: string; 
-    suggestion: string; 
-    severity: 'high' | 'medium' | 'low' 
+  const checkViolations = (job: any): {
+    type: string;
+    description: string;
+    suggestion: string;
+    severity: 'high' | 'medium' | 'low';
   }[] => {
-    const violations: { 
-      type: string; 
-      description: string; 
-      suggestion: string; 
-      severity: 'high' | 'medium' | 'low' 
+    const violations: {
+      type: string;
+      description: string;
+      suggestion: string;
+      severity: 'high' | 'medium' | 'low';
     }[] = [];
 
     // Kiểm tra mô tả công việc
     if (!job.jobDescription || job.jobDescription.length < 100) {
       violations.push({
         type: 'Mô tả công việc',
-        description: 'Mô tả công việc quá ngắn hoặc không có',
-        suggestion: 'Bổ sung thêm thông tin về nhiệm vụ chính, trách nhiệm công việc, môi trường làm việc. Mô tả càng chi tiết càng thu hút được ứng viên phù hợp.',
+        description: MessageUtils.getMessage("ERROR_JOB_DESCRIPTION_TOO_SHORT"),
+        suggestion: MessageUtils.getMessage("SUGGESTION_JOB_DESCRIPTION_LENGTH"), 
         severity: 'high'
       });
     }
@@ -219,8 +220,8 @@ export default function JobsPage({
     if (!job.jobRequirements || job.jobRequirements.length < 50) {
       violations.push({
         type: 'Yêu cầu công việc',
-        description: 'Yêu cầu công việc quá ngắn hoặc không có',
-        suggestion: 'Nêu rõ các yêu cầu về: kinh nghiệm, kỹ năng chuyên môn, kỹ năng mềm, trình độ học vấn, ngoại ngữ (nếu cần).',
+        description: MessageUtils.getMessage("ERROR_JOB_REQUIREMENTS_TOO_SHORT"),
+        suggestion: MessageUtils.getMessage("SUGGESTION_JOB_REQUIREMENTS_LENGTH"),
         severity: 'high'
       });
     }
@@ -229,27 +230,17 @@ export default function JobsPage({
     if (!job.benefits || job.benefits.length < 50) {
       violations.push({
         type: 'Quyền lợi',
-        description: 'Quyền lợi quá ít hoặc không có',
-        suggestion: 'Bổ sung các quyền lợi như: chế độ bảo hiểm, thưởng, đào tạo, nghỉ phép, lộ trình thăng tiến, các hoạt động team building...',
-        severity: 'medium'
-      });
-    }
-
-    // Kiểm tra số lượng tuyển
-    if (!job.numberOfRecruitment || job.numberOfRecruitment < 1) {
-      violations.push({
-        type: 'Số lượng tuyển',
-        description: 'Số lượng tuyển dụng không hợp lệ',
-        suggestion: 'Vui lòng nhập số lượng cần tuyển dụng lớn hơn 0.',
+        description: MessageUtils.getMessage("ERROR_BENEFITS_TOO_SHORT"),
+        suggestion: MessageUtils.getMessage("SUGGESTION_BENEFITS_LENGTH"),
         severity: 'medium'
       });
     }
 
     if (job.numberOfRecruitment > 100) {
       violations.push({
-        type: 'Số lượng tuyển',
-        description: 'Số lượng tuyển dụng quá lớn (trên 100)',
-        suggestion: 'Nếu cần tuyển số lượng lớn, hãy chia nhỏ thành nhiều đợt tuyển dụng để dễ quản lý và đánh giá.',
+        type: 'Số lượng tuyển dụng',
+        description: MessageUtils.getMessage("ERROR_RECRUITMENT_NUMBER_TOO_HIGH"),
+        suggestion: MessageUtils.getMessage("SUGGESTION_RECRUITMENT_NUMBER"),
         severity: 'low'
       });
     }
@@ -257,9 +248,9 @@ export default function JobsPage({
     // Kiểm tra địa điểm
     if (!job.jobLocation || job.jobLocation.length < 5) {
       violations.push({
-        type: 'Địa điểm',
-        description: 'Địa điểm làm việc không hợp lệ hoặc quá ngắn',
-        suggestion: 'Cung cấp địa chỉ cụ thể: số nhà, đường, quận/huyện, tỉnh/thành phố. Nếu có nhiều địa điểm, hãy liệt kê rõ từng nơi.',
+        type: 'Địa điểm làm việc',
+        description: MessageUtils.getMessage("ERROR_JOB_LOCATION_INVALID"),
+        suggestion: MessageUtils.getMessage("SUGGESTION_JOB_LOCATION"),
         severity: 'medium'
       });
     }
@@ -284,7 +275,7 @@ export default function JobsPage({
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý tuyển dụng</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Quản lý tin tuyển dụng</h1>
             <Link
               href="/employer/jobs/add"
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -446,6 +437,9 @@ export default function JobsPage({
                     Thời hạn
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Lượt ứng tuyển
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Thao tác
                   </th>
                 </tr>
@@ -493,6 +487,15 @@ export default function JobsPage({
                             )}
                           </span>
                         </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FaUsers className="h-4 w-4 mr-2 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-900">
+                          {numberOfApplications?.[job.jobId] || 0}
+                        </span>
+                        <span className="ml-1 text-sm text-gray-500">ứng viên</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">

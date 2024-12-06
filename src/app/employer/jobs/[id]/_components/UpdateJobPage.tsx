@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Alert from "@/components/Alert";
 import jobApiRequest from "@/app/apiRequest/job";
+import { MessageUtils } from "@/utils/messageUtils";
 
 interface JobFormData {
   title: string;
@@ -73,7 +74,7 @@ export default function UpdateJobPage({ jobId }: { jobId: number }) {
         });
       } catch (error) {
         console.error("Error fetching job data:", error);
-        Alert.error("Lỗi!", "Không thể tải thông tin công việc.");
+        Alert.error("ERROR_JOB_NOT_FOUND");
       }
     };
     fetchJobData();
@@ -83,53 +84,53 @@ export default function UpdateJobPage({ jobId }: { jobId: number }) {
     const newErrors: Partial<Record<keyof JobFormData, string>> = {};
     
     if (!formData.title.trim()) {
-      newErrors.title = "Tiêu đề không được để trống";
+      newErrors.title = MessageUtils.getMessage("ERROR_REQUIRED_TITLE");
     }
     
     if (!formData.jobLocation.trim()) {
-      newErrors.jobLocation = "Vị trí làm việc không được để trống";
+      newErrors.jobLocation = MessageUtils.getMessage("ERROR_REQUIRED_JOB_LOCATION");
     }
     
     if (!formData.salary.trim()) {
-      newErrors.salary = "Mức lương không được để trống";
+      newErrors.salary = MessageUtils.getMessage("ERROR_REQUIRED_SALARY");
     }
     
     if (formData.numberOfRecruitment <= 0) {
-      newErrors.numberOfRecruitment= "Số lượng tuyển dụng phải lớn hơn 0";
+      newErrors.numberOfRecruitment= MessageUtils.getMessage("ERROR_INVALID_RECRUITMENT_NUMBER");
     }
 
     if (!formData.jobDescription.trim()) {
-      newErrors.jobDescription = "Mô tả công việc không được để trống";
+      newErrors.jobDescription = MessageUtils.getMessage("ERROR_REQUIRED_JOB_DESCRIPTION");
     }
 
     if (!formData.expirationDate) {
-      newErrors.expirationDate = "Ngày hết hạn không được để trống";
+      newErrors.expirationDate = MessageUtils.getMessage("ERROR_REQUIRED_EXPIRATION_DATE");
     } else {
       const today = new Date();
       const expDate = new Date(formData.expirationDate);
       if (expDate <= today) {
-        newErrors.expirationDate = "Ngày hết hạn phải lớn hơn ngày hiện tại";
+        newErrors.expirationDate = MessageUtils.getMessage("ERROR_INVALID_EXPIRATION_DATE");
       }
     }
 
     if (!formData.companyName.trim()) {
-      newErrors.companyName = "Tên công ty không được để trống";
+      newErrors.companyName = MessageUtils.getMessage("ERROR_REQUIRED_COMPANY_NAME");
     }
     
     if (!formData.contactPerson.trim()) {
-      newErrors.contactPerson = "Người liên hệ không được để trống";
+      newErrors.contactPerson = MessageUtils.getMessage("ERROR_REQUIRED_CONTACT_PERSON");
     }
     
     if (!formData.contactPhone.trim()) {
-      newErrors.contactPhone = "Số điện thoại không được để trống";
+      newErrors.contactPhone = MessageUtils.getMessage("ERROR_REQUIRED_CONTACT_PHONE");
     } else if (!/^\d{10,11}$/.test(formData.contactPhone)) {
-      newErrors.contactPhone = "Số điện thoại không hợp lệ";
+      newErrors.contactPhone = MessageUtils.getMessage("ERROR_INVALID_CONTACT_PHONE");
     }
     
     if (!formData.contactEmail.trim()) {
-      newErrors.contactEmail = "Email không được để trống";
+      newErrors.contactEmail = MessageUtils.getMessage("ERROR_REQUIRED_CONTACT_EMAIL");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-      newErrors.contactEmail = "Email không hợp lệ";
+      newErrors.contactEmail = MessageUtils.getMessage("ERROR_INVALID_CONTACT_EMAIL");
     }
 
     setErrors(newErrors);
@@ -141,12 +142,12 @@ export default function UpdateJobPage({ jobId }: { jobId: number }) {
     if (validateForm()) {
       try {
         const result = await jobApiRequest.updateJob(jobId, formData as any);
-        Alert.success("Thành công!", result.payload.message);
+        Alert.success("SUCCESS_JOB_UPDATE");
         router.push("/employer/jobs");
         router.refresh();
       } catch (error) {
         console.error("Error updating job:", error);
-        Alert.error("Lỗi!", "Đã xảy ra lỗi khi cập nhật công việc.");
+        Alert.error("ERROR_JOB_UPDATE");
       }
     }
   };
