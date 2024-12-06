@@ -7,6 +7,7 @@ import {
 import { JobResType } from "@/app/schemaValidations/job.schema";
 import Link from "next/link"; // Nhớ import Link từ next/link
 import { useEffect, useState } from "react";
+import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import { FiUser } from "react-icons/fi";
 
 export default function AppliedJobsPage({
@@ -16,7 +17,41 @@ export default function AppliedJobsPage({
 }) {
   // State để lưu trữ thông tin công việc từ API
   const [jobDetails, setJobDetails] = useState<JobResType | null>(null);
+  // state để quản lý phân trang.
+  const [currentPage, setCurrentPage] = useState(1);
+  const jobsPerPage = 5;
 
+
+
+  const indexOfLastJob = currentPage * jobsPerPage;
+  const indexOfFisrtJob = indexOfLastJob - jobsPerPage;
+  const currentJobs = appliesList ? appliesList.slice(indexOfFisrtJob, indexOfLastJob) : [];
+  const totalPages = appliesList ? Math.ceil(appliesList.length / jobsPerPage) : 0;
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1)
+    }
+  }
+
+  const handlePrePage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1)
+    }
+  }
+
+  const GotoPage = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  }
+
+  const getPageNumber = () => {
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(i)
+    }
+
+    return pageNumbers;
+  }
   useEffect(() => {
     if (appliesList && appliesList.length > 0) {
       const latestApply = appliesList[0];
@@ -45,7 +80,7 @@ export default function AppliedJobsPage({
         <div className="flex flex-col sm:flex-row gap-6 w-full max-w-screen-xl">
           <div className="bg-white shadow-xl shadow-gray-100 w-full max-w-4xl flex flex-col gap-4 p-6 rounded-md">
             {appliesList && appliesList.length > 0 ? (
-              appliesList.map((apply) => (
+              currentJobs.map((apply) => (
                 <Link
                   href={`/jobs/${apply.jobId}`}
                   key={apply.jobId}
@@ -70,21 +105,20 @@ export default function AppliedJobsPage({
                   </div>
                   <div className="flex items-center mt-4">
                     <span
-                      className={`px-4 py-2 text-xs font-medium ${
-                        apply.status === 0
+                      className={`px-4 py-2 text-xs font-medium ${apply.status === 0
                           ? "bg-yellow-200 text-yellow-700" // Màu cho trạng thái "Chờ xét duyệt"
                           : apply.status === 1
-                          ? "bg-blue-200 text-blue-700" // Màu cho trạng thái "Đang được xem xét"
-                          : apply.status === 2
-                          ? "bg-green-200 text-green-700" // Màu cho trạng thái "Đang chờ phỏng vấn"
-                          : apply.status === 3
-                          ? "bg-orange-200 text-orange-700" // Màu cho trạng thái "Phỏng vấn xong"
-                          : apply.status === 4
-                          ? "bg-gray-200 text-gray-700" // Màu cho trạng thái "Đang chờ quyết định"
-                          : apply.status === 5
-                          ? "bg-teal-200 text-teal-700" // Màu cho trạng thái "Đã tuyển dụng"
-                          : "bg-red-200 text-red-700" // Màu mặc định cho trạng thái "Bị từ chối"
-                      }`}
+                            ? "bg-blue-200 text-blue-700" // Màu cho trạng thái "Đang được xem xét"
+                            : apply.status === 2
+                              ? "bg-green-200 text-green-700" // Màu cho trạng thái "Đang chờ phỏng vấn"
+                              : apply.status === 3
+                                ? "bg-orange-200 text-orange-700" // Màu cho trạng thái "Phỏng vấn xong"
+                                : apply.status === 4
+                                  ? "bg-gray-200 text-gray-700" // Màu cho trạng thái "Đang chờ quyết định"
+                                  : apply.status === 5
+                                    ? "bg-teal-200 text-teal-700" // Màu cho trạng thái "Đã tuyển dụng"
+                                    : "bg-red-200 text-red-700" // Màu mặc định cho trạng thái "Bị từ chối"
+                        }`}
                     >
                       {getStatusLabel(apply.status)}{" "}
                       {/* Gọi hàm ánh xạ để lấy nhãn trạng thái */}
@@ -95,6 +129,42 @@ export default function AppliedJobsPage({
             ) : (
               <p>Không có công việc nào đã ứng tuyển.</p>
             )}
+            {/*PHAN TRANG*/}
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4">
+              <button
+                onClick={handlePrePage}
+                disabled={currentPage === 1}
+                className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 transition-colors hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                <AiOutlineLeft className="mr-2" size={16} />
+                Trang trước
+              </button>
+
+              <div className="flex items-center gap-2">
+                {getPageNumber().map((number) => (
+                  <button
+                    key={number}
+                    onClick={() => GotoPage(number)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors
+          ${number === currentPage
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                  >
+                    {number}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 transition-colors hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                Trang sau
+                <AiOutlineRight className="ml-2" size={16} />
+              </button>
+            </div>
           </div>
 
           {/* Đề xuất công việc */}

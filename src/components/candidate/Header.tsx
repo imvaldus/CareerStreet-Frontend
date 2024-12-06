@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
-import {deleteCookie } from "cookies-next"; // Import hàm deleteCookie
+import { deleteCookie } from "cookies-next"; // Import hàm deleteCookie
 import Image from "next/image";
 import logo from "/public/images/logo.png";
 import icon from "/public/images/icon.jpg";
 import { ChevronDownIcon } from "@radix-ui/react-icons"; // Cập nhật đường dẫn import
+import { useState } from "react"; // Import useState
 
 export default function Header() {
-  // const [username, setUsername] = useState("");
-
+  const [isOpen, setIsOpen] = useState(false); // Thêm trạng thái quản lý dropdown
 
   // Hàm xử lý logout
   const handleLogout = () => {
@@ -17,6 +17,7 @@ export default function Header() {
     deleteCookie("sessionToken"); // Xóa cookie
     window.location.href = "/"; // Chuyển hướng về trang chủ
   };
+
   return (
     <header className="bg-slate-200 py-2 shadow-md sticky top-0 z-50">
       <nav className="flex justify-between items-center w-[92%] mx-auto">
@@ -46,10 +47,12 @@ export default function Header() {
           </div>
         </div>
 
-        <div className="relative group z-50">
-          <div className="flex items-center gap-2 cursor-pointer">
-            
-
+        <div className="relative z-50">
+          {/* Nút hiển thị dropdown */}
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setIsOpen(!isOpen)} // Toggle trạng thái khi click
+          >
             <Image
               className="w-10 h-10 rounded-full border border-gray-300 shadow-sm"
               src={icon}
@@ -60,61 +63,59 @@ export default function Header() {
           </div>
 
           {/* Menu tùy chọn */}
-          <ul className="text-xs absolute right-0 top-full mt-2 w-48 bg-white shadow-lg rounded-lg opacity-0 group-hover:opacity-100 transform group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-10">
-            
-          <li>
-                  <Link
-                    className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200 rounded-t-lg"
-                    href="/candidate"
-                  >
-                    CarrerStreet
-                  </Link>
-                </li>
-            <li>
-              <Link
-                className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200 rounded-t-lg"
-                href="/candidate/cvs"
-              >
-                Hồ sơ xin việc
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200"
-                href="/candidate/applied"
-              >
-                Việc đã ứng tuyển
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200"
-                href="/candidate/saved"
-              >
-                Việc đã lưu
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200"
-                href="/candidate/account"
-              >
-                Tài khoản
-              </Link>
-            </li>
-
-            {/* Đường gạch ngang phân cách */}
-            <hr className="border-gray-200 my-2" />
-
-            <li>
-                  <button
-                    onClick={handleLogout}
-                    className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200 w-full text-left"
-                  >
-                    Logout
-                  </button>
-                </li>
-          </ul>
+          {isOpen && (
+            <ul className="text-xs absolute right-0 top-full mt-2 w-48 bg-white shadow-lg rounded-lg transition-all duration-300 z-10">
+              <li>
+                <Link
+                  className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200 rounded-t-lg"
+                  href="/candidate"
+                >
+                  CarrerStreet
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200"
+                  href="/candidate/cvs"
+                >
+                  Hồ sơ xin việc
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200"
+                  href="/candidate/applied"
+                >
+                  Việc đã ứng tuyển
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200"
+                  href="/candidate/saved"
+                >
+                  Việc đã lưu
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200"
+                  href="/candidate/account"
+                >
+                  Tài khoản
+                </Link>
+              </li>
+              <hr className="border-gray-200 my-2" />
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200 w-full text-left"
+                >
+                  Logout
+                </button>
+              </li>
+            </ul>
+          )}
         </div>
       </nav>
     </header>

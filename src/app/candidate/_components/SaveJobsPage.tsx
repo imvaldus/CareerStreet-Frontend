@@ -17,19 +17,20 @@ interface SaveJobsPageProps {
 
 const SaveJobsPage: React.FC<SaveJobsPageProps> = ({ savedJobs, candidateId }) => {
 
-  console.log('Props received:', { savedJobs, candidateId }); 
+  console.log('Props received:', { savedJobs, candidateId });
   // CÁC BIẾN QUẢN LÝ PHÂN TRANG
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const jobsPerPage = 5;
+
+  const indexOfLastJob = currentPage * jobsPerPage;
+  const indexOfFirstJob = indexOfLastJob - jobsPerPage;
 
   // BIẾN ĐỂ XÓA
   const [Delete, setDelete] = useState<number | null>(null);
 
   const router = useRouter();
 
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [savedJobs]);
+
 
   if (!savedJobs) {
     return (
@@ -40,41 +41,42 @@ const SaveJobsPage: React.FC<SaveJobsPageProps> = ({ savedJobs, candidateId }) =
       </div>
     );
   }
+
+  const currentJobs = savedJobs.slice(indexOfFirstJob, indexOfLastJob);
   // TỔNG SỐ TRANG
-  const totalPages = Math.max(Math.ceil(savedJobs.length / jobsPerPage), 1);
-  const validCurrentPage = Math.min(currentPage, totalPages - 1);
+  const totalPages = Math.ceil(savedJobs.length / jobsPerPage);
 
-  if (validCurrentPage !== currentPage) {
-    setCurrentPage(validCurrentPage);
-  }
-
-  const currentJobs = savedJobs.slice(
-    validCurrentPage * jobsPerPage,
-    (validCurrentPage + 1) * jobsPerPage
-  );
 
   const handleNextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(prev => Math.min(prev + 1, totalPages - 1));
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
     }
   };
 
   const handlePrevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(prev => Math.max(prev - 1, 0));
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
     }
   };
 
   const goToPage = (pageNumber: number) => {
-    const targetPage = Math.max(0, Math.min(pageNumber, totalPages - 1));
-    setCurrentPage(targetPage);
+    setCurrentPage(pageNumber);
   };
+
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(i);
+    }
+    return pageNumbers;
+  };
+
   // HÀM DÙNG ĐỂ XÓA
   const DeleteSaveJob = async (jobId: number) => {
     try {
-      console.log('jobID', jobId,candidateId);
+      console.log('jobID', jobId, candidateId);
       setDelete(jobId);
-      
+
       const response = await ApiRequestSave.DeleteJob(candidateId!, jobId);
       console.log('response khi xóa', response)
       if (response.status === 200) {
@@ -191,10 +193,11 @@ const SaveJobsPage: React.FC<SaveJobsPageProps> = ({ savedJobs, candidateId }) =
                 </div>
 
                 {/* Pagination */}
+                {/* Thay thế phần pagination cũ bằng đoạn code này */}
                 <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4">
                   <button
                     onClick={handlePrevPage}
-                    disabled={currentPage === 0}
+                    disabled={currentPage === 1}
                     className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 transition-colors hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
                   >
                     <AiOutlineLeft className="mr-2" size={16} />
@@ -202,24 +205,24 @@ const SaveJobsPage: React.FC<SaveJobsPageProps> = ({ savedJobs, candidateId }) =
                   </button>
 
                   <div className="flex items-center gap-2">
-                    {Array.from({ length: totalPages }, (_, i) => (
+                    {getPageNumbers().map((number) => (
                       <button
-                        key={i}
-                        onClick={() => goToPage(i)}
+                        key={number}
+                        onClick={() => goToPage(number)}
                         className={`px-3 py-1 rounded-md text-sm font-medium transition-colors
-                          ${i === currentPage
+          ${number === currentPage
                             ? 'bg-blue-600 text-white'
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                           }`}
                       >
-                        {i + 1}
+                        {number}
                       </button>
                     ))}
                   </div>
 
                   <button
                     onClick={handleNextPage}
-                    disabled={currentPage >= totalPages - 1}
+                    disabled={currentPage === totalPages}
                     className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 transition-colors hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
                   >
                     Trang sau

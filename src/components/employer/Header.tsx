@@ -5,8 +5,10 @@ import { ChevronDownIcon } from "@radix-ui/react-icons";
 import icon from "/public/images/icon.jpg"; // Cập nhật đường dẫn tới ảnh đại diện của người dùng
 import Link from "next/link";
 import { deleteCookie } from "cookies-next";
+import { useState } from "react";
 
 export default function Header() {
+  const [isOpen, setIsOpen] = useState(false); // Thêm trạng thái quản lý dropdown
   // Hàm xử lý logout
   const handleLogout = () => {
     deleteCookie("username"); // Xóa cookie
@@ -42,7 +44,11 @@ export default function Header() {
       </div>
 
       <div className="relative group z-50">
-        <div className="flex items-center gap-2 cursor-pointer">
+        {/* Nút hiển thị dropdown */}
+        <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setIsOpen(!isOpen)} // Toggle trạng thái khi click
+          >
           <Image
             className="w-10 h-10 rounded-full border border-gray-300 shadow-sm"
             src={icon}
@@ -53,6 +59,7 @@ export default function Header() {
         </div>
 
         {/* Menu tùy chọn */}
+        {isOpen && (
         <ul className="text-xs absolute right-0 top-full mt-2 w-48 bg-white shadow-lg rounded-lg opacity-0 group-hover:opacity-100 transform group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-10">
           <li>
             <Link
@@ -75,6 +82,7 @@ export default function Header() {
             </button>
           </li>
         </ul>
+        )}
       </div>
     </div>
   );
