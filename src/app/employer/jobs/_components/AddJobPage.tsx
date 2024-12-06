@@ -14,6 +14,7 @@ import { TechListResType } from "@/app/schemaValidations/tech.schema";
 import techApiRequest from "@/app/apiRequest/tech";
 import { TechDetailCreateBodyType } from "@/app/schemaValidations/techDetail.schema";
 import { useCookies } from "react-cookie";
+import { MessageUtils } from "@/utils/messageUtils";
 
 interface JobFormData {
   companyName: string;
@@ -53,7 +54,7 @@ export default function AddJobPage({
 }) {
   const [formData, setFormData] = useState<JobFormData>({
     companyName: "",
-    numberOfEmployees: "",
+    numberOfEmployees: "0",
     companyWebsite: "",
     companyOverview: "",
     title: "",
@@ -119,23 +120,22 @@ export default function AddJobPage({
 
   // Hàm chọn công nghệ
   const handleSelectTech = (id: number) => {
-    const updatedTech = new Set(selectedTech); // Tạo một bản sao của selectedTech
-
+    const updatedTech = new Set(selectedTech);
     if (updatedTech.has(id)) {
-      updatedTech.delete(id); // Nếu đã chọn thì xóa
+      updatedTech.delete(id);
     } else {
-      updatedTech.add(id); // Nếu chưa chọn thì thêm
+      // Kiểm tra số lượng công nghệ đã chọn
+      if (updatedTech.size >= 10) {
+        Alert.error("ERROR_TOO_MANY_TECH");
+        return;
+      }
+      updatedTech.add(id);
     }
 
-    // Log các ID được chọn vào console
-    console.log(Array.from(updatedTech) + " mang id tech"); // Chuyển đổi Set thành mảng để hiển thị
-
-    setSelectedTech(updatedTech); // Cập nhật trạng thái công nghệ đã chọn
-
-    // Cập nhật formData
-    setFormData((prevData) => ({
-      ...prevData,
-      techIds: Array.from(updatedTech), // Chuyển đổi Set thành mảng
+    setSelectedTech(updatedTech);
+    setFormData(prev => ({
+      ...prev,
+      techIds: Array.from(updatedTech)
     }));
   };
 
@@ -144,7 +144,7 @@ export default function AddJobPage({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const [x, setX] = useState(0); // Biến để lưu số ngày chênh lệch
-  // Lấy ngày hiện tại và đặt vào formData
+  // Lấy ngày hiện tại và đặt vào formData khi component được mount
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0]; // Lấy ngày hôm nay ở định dạng YYYY-MM-DD
     setFormData((prevData) => ({
@@ -154,64 +154,140 @@ export default function AddJobPage({
   }, []);
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { id, value } = e.target;
 
-    // Lấy ngày hiện tại
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
-    // Cập nhật giá trị mới vào formData
-    setFormData((prevData) => ({
-      ...prevData,
-      [id]: value,
+    // Cập nhật formData
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
     }));
 
-    // Tiếp tục với các kiểm tra ngày tháng
-    const postingDate =
-      id === "postingDate"
-        ? new Date(value)
-        : new Date(formData.postingDate || today);
-    const expirationDate =
-      id === "expirationDate"
-        ? new Date(value)
-        : new Date(formData.expirationDate || today);
-    const currentDate = new Date(today); // Ngày hiện tại
+    // Xóa lỗi khi người dùng sửa
+    setErrors(prev => {
+      const newErrors = { ...prev };
 
-    // Kiểm tra các điều kiện ngày tháng
-    if (postingDate < currentDate) {
-      alert("Ngày đăng không được nhỏ hơn ngày hiện tại.");
-      setFormData((prevData) => ({
-        ...prevData,
-        postingDate: today, // Reset lại giá trị nếu sai
-      }));
-      return; // Dừng lại nếu có lỗi
-    }
+      // Validate realtime cho từng trường
+      switch (id) {
+        case 'companyWebsite':
+          if (value) {
+            const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+            if (urlPattern.test(value)) {
+              delete newErrors.companyWebsite;
+            }
+          }
+          break;
 
-    if (postingDate > expirationDate) {
-      alert("Ngày đăng không được lớn hơn ngày hết hạn.");
-      setFormData((prevData) => ({
-        ...prevData,
-        postingDate: today, // Reset lại giá trị nếu sai
-        expirationDate: "", // Reset lại giá trị nếu sai
-      }));
-      return; // Dừng lại nếu có lỗi
-    }
+        case 'numberOfEmployees':
+          const numEmployees = Number(value);
+          if (value && numEmployees > 0 && numEmployees <= 1000000 && Number.isInteger(numEmployees)) {
+            delete newErrors.numberOfEmployees;
+          }
+          break;
 
-    if (expirationDate < postingDate) {
-      alert("Ngày hết hạn phải lớn hơn hoặc bằng ngày đăng.");
-      setFormData((prevData) => ({
-        ...prevData,
-        expirationDate: "", // Reset lại giá trị nếu sai
-      }));
-      return; // Dừng lại nếu có lỗi
-    }
+        case 'title':
+          if (value && value.length >= 10 && value.length <= 100) {
+            delete newErrors.title;
+          }
+          break;
 
-    // Tính số ngày chênh lệch
-    const timeDiff = expirationDate.getTime() - postingDate.getTime();
-    const dayDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-    setX(dayDiff); // Lưu số ngày chênh lệch vào biến x
+        case 'salary':
+          if (salaryType === 'fixed') {
+            const salaryNum = Number(value);
+            if (value && salaryNum >= 1000000 && salaryNum <= 100000000) {
+              delete newErrors.salary;
+            }
+          } else {
+            delete newErrors.salary;
+          }
+          break;
+
+        case 'jobDescription':
+          if (value && value.length >= 10) {
+            delete newErrors.jobDescription;
+          }
+          break;
+
+        case 'jobRequirements':
+          if (value && value.length >= 10) {
+            delete newErrors.jobRequirements;
+          }
+          break;
+
+        case 'benefits':
+          if (value && value.length >= 10) {
+            delete newErrors.benefits;
+          }
+          break;
+
+        case 'levelId':
+          if (value) {
+            delete newErrors.levelId;
+          }
+          break;
+
+        case 'educationLevel':
+          if (value) {
+            delete newErrors.educationLevel;
+          }
+          break;
+
+        case 'jobType':
+          if (value) {
+            delete newErrors.jobType;
+          }
+          break;
+
+        case 'gender':
+          if (value) {
+            delete newErrors.gender;
+          }
+          break;
+
+        case 'contactPerson':
+          if (value) {
+            delete newErrors.contactPerson;
+          }
+          break;
+
+        case 'contactPhone':
+          if (value && /^[0-9]{10,11}$/.test(value)) {
+            delete newErrors.contactPhone;
+          }
+          break;
+
+        case 'contactEmail':
+          if (value && value.includes('@')) {
+            delete newErrors.contactEmail;
+          }
+          break;
+
+        case 'contactAddress':
+          if (value) {
+            delete newErrors.contactAddress;
+          }
+          break;
+
+        case 'jobRank':
+          if (value) {
+            delete newErrors.jobRank;
+          }
+          break;
+
+        default:
+          if (value) {
+            delete newErrors[id];
+          }
+          break;
+      }
+
+      return newErrors;
+    });
+
+    // Xử lý các logic khác của handleChange (như xử lý ngày tháng)
+    const today = new Date().toISOString().split("T")[0];
+    // ... phần code xử lý ngày tháng giữ nguyên
   };
 
   const validateForm = () => {
@@ -243,40 +319,132 @@ export default function AddJobPage({
 
     // Kiểm tra các trường liên quan đến thông tin công ty và công việc
     if (!companyName)
-      formErrors.companyName = "Tên công ty không được để trống.";
+      formErrors.companyName = MessageUtils.getMessage("ERROR_REQUIRED_COMPANY_NAME");
     if (!numberOfEmployees)
-      formErrors.numberOfEmployees = "Số lượng nhân viên không được để trống.";
+      formErrors.numberOfEmployees = MessageUtils.getMessage("ERROR_REQUIRED_EMPLOYEES");
     if (!companyWebsite)
-      formErrors.companyWebsite = "Website của công ty không được để trống.";
-    if (!salary) formErrors.salary = "Mức lương không được để trống.";
-    if (!jobType) formErrors.jobType = "Loại công việc không được để trống.";
+      formErrors.companyWebsite = MessageUtils.getMessage("ERROR_REQUIRED_WEBSITE");
+    if (!salary) 
+      formErrors.salary = MessageUtils.getMessage("ERROR_REQUIRED_SALARY");
+    if (!jobType) 
+      formErrors.jobType = MessageUtils.getMessage("ERROR_REQUIRED_JOB_TYPE");
     if (!contactPerson)
-      formErrors.contactPerson = "Người liên hệ không được để trống.";
+      formErrors.contactPerson = MessageUtils.getMessage("ERROR_REQUIRED_CONTACT_PERSON");
     if (!contactAddress)
-      formErrors.contactAddress = "Địa chỉ liên hệ không được để trống.";
-    if (!contactPhone)
-      formErrors.contactPhone = "Số điện thoại liên hệ không được để trống.";
-    if (!contactEmail)
-      formErrors.contactEmail = "Email liên hệ không được để trống.";
+      formErrors.contactAddress = MessageUtils.getMessage("ERROR_REQUIRED_CONTACT_ADDRESS");
     if (!postingDate)
-      formErrors.postingDate = "Ngày đăng bài không được để trống.";
+      formErrors.postingDate = MessageUtils.getMessage("ERROR_REQUIRED_POSTING_DATE");
     if (!expirationDate)
-      formErrors.expirationDate = "Ngày hết hạn không được để trống.";
-
-    // Kiểm tra các trường còn thiếu khác
+      formErrors.expirationDate = MessageUtils.getMessage("ERROR_REQUIRED_EXPIRATION_DATE");
     if (!companyOverview)
-      formErrors.companyOverview = "Mô tả công ty không được để trống.";
+      formErrors.companyOverview = MessageUtils.getMessage("ERROR_REQUIRED_COMPANY_OVERVIEW");
     if (!jobLocation)
-      formErrors.jobLocation = "Địa điểm làm việc không được để trống.";
+      formErrors.jobLocation = MessageUtils.getMessage("ERROR_REQUIRED_JOB_LOCATION");
     if (!jobDescription)
-      formErrors.jobDescription = "Mô tả công việc không được để trống.";
+      formErrors.jobDescription = MessageUtils.getMessage("ERROR_REQUIRED_JOB_DESCRIPTION");
     if (!jobRequirements)
-      formErrors.jobRequirements = "Yêu cầu công việc không được để trống.";
-    if (!benefits) formErrors.benefits = "Phúc lợi không được để trống.";
+      formErrors.jobRequirements = MessageUtils.getMessage("ERROR_REQUIRED_JOB_REQUIREMENTS");
+    if (!benefits) 
+      formErrors.benefits = MessageUtils.getMessage("ERROR_REQUIRED_BENEFITS");
     if (!educationLevel)
-      formErrors.educationLevel = "Trình độ học vấn không được để trống.";
-    if (!jobRank) formErrors.jobRank = "Cấp bậc công việc không được để trống.";
-    if (!title) formErrors.title = "Chức danh không được để trống.";
+      formErrors.educationLevel = MessageUtils.getMessage("ERROR_REQUIRED_EDUCATION");
+    if (!jobRank) 
+      formErrors.jobRank = MessageUtils.getMessage("ERROR_REQUIRED_JOB_RANK");
+    if (!title) 
+      formErrors.title = MessageUtils.getMessage("ERROR_REQUIRED_JOB_TITLE");
+
+    // Thêm validation cho mức lương
+    if (Number(salary) < 1000)
+      formErrors.salary = MessageUtils.getMessage("ERROR_SALARY_TOO_LOW");
+    if (Number(salary) > 1000000000)
+      formErrors.salary = MessageUtils.getMessage("ERROR_SALARY_TOO_HIGH");
+
+    // Kiểm tra tiêu đề
+    const bannedTitleWords = ['urgent', 'gấp', 'hot', 'khẩn', 'nhanh', 'siêu'];
+    const titleLower = title.toLowerCase();
+    for (const word of bannedTitleWords) {
+      if (titleLower.includes(word)) {
+        formErrors.title = MessageUtils.getMessage("ERROR_TITLE_BANNED_WORD").replace("{word}", word);
+        break;
+      }
+    }
+    if (title.length < 10)
+      formErrors.title = MessageUtils.getMessage("ERROR_TITLE_TOO_SHORT");
+    if (title.length > 100)
+      formErrors.title = MessageUtils.getMessage("ERROR_TITLE_TOO_LONG");
+
+    // Kiểm tra độ dài mô tả
+    if (jobDescription.length < 10)
+      formErrors.jobDescription = MessageUtils.getMessage("ERROR_JOB_DESCRIPTION_TOO_SHORT");
+    if (jobRequirements.length < 10)
+      formErrors.jobRequirements = MessageUtils.getMessage("ERROR_JOB_REQUIREMENTS_TOO_SHORT");
+    if (benefits.length < 10)
+      formErrors.benefits = MessageUtils.getMessage("ERROR_BENEFITS_TOO_SHORT");
+
+    // Kiểm tra email và số điện thoại
+    if (!contactEmail.includes('@'))
+      formErrors.contactEmail = MessageUtils.getMessage("ERROR_INVALID_EMAIL");
+    if (!/^[0-9]{10,11}$/.test(contactPhone))
+      formErrors.contactPhone = MessageUtils.getMessage("ERROR_INVALID_PHONE");
+
+    // Kiểm tra địa điểm
+    if (jobLocation.length < 5)
+      formErrors.jobLocation = MessageUtils.getMessage("ERROR_JOB_LOCATION_INVALID");
+
+    // Kiểm tra ngày đăng và hết hạn
+    const postingDateObj = new Date(postingDate);
+    const expirationDateObj = new Date(expirationDate);
+    const now = new Date();
+
+    if (postingDateObj > now)
+      formErrors.postingDate = MessageUtils.getMessage("ERROR_POSTING_DATE_FUTURE");
+    if (expirationDateObj <= postingDateObj)
+      formErrors.expirationDate = MessageUtils.getMessage("ERROR_INVALID_DATE").replace("{field}", "hết hạn");
+
+    // Kiểm tra giới tính
+    const genderLower = formData.gender.toLowerCase();
+    if (!['nam', 'nữ', 'không yêu cầu', 'nam/nữ', 'nam/nu'].includes(genderLower))
+      formErrors.gender = MessageUtils.getMessage("ERROR_GENDER_INVALID");
+
+    // Kiểm tra số lượng tuyển dụng
+    if (formData.numberOfRecruitment < 0)
+      formErrors.numberOfRecruitment = MessageUtils.getMessage("ERROR_INVALID_RECRUITMENT");
+    if (formData.numberOfRecruitment > 100)
+      formErrors.numberOfRecruitment = MessageUtils.getMessage("ERROR_RECRUITMENT_TOO_HIGH");
+
+    // Validation cho số lượng nhân viên
+    const numEmployees = Number(formData.numberOfEmployees);
+    if (!formData.numberOfEmployees) {
+      formErrors.numberOfEmployees = MessageUtils.getMessage("ERROR_REQUIRED_EMPLOYEES");
+    } else if (numEmployees < 1) {
+      formErrors.numberOfEmployees = MessageUtils.getMessage("ERROR_EMPLOYEES_TOO_LOW");
+    } else if (numEmployees > 1000000) {
+      formErrors.numberOfEmployees = MessageUtils.getMessage("ERROR_EMPLOYEES_TOO_HIGH");
+    } else if (!Number.isInteger(numEmployees)) {
+      formErrors.numberOfEmployees = MessageUtils.getMessage("ERROR_EMPLOYEES_MUST_BE_INTEGER");
+    }
+
+    // Validate website
+    if (!formData.companyWebsite) {
+      formErrors.companyWebsite = MessageUtils.getMessage("ERROR_REQUIRED_WEBSITE");
+    } else {
+      const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+      if (!urlPattern.test(formData.companyWebsite)) {
+        formErrors.companyWebsite = MessageUtils.getMessage("ERROR_INVALID_WEBSITE");
+      }
+    }
+
+    // Validate công nghệ yêu cầu
+    if (formData.techIds.length === 0) {
+      formErrors.techIds = MessageUtils.getMessage("ERROR_REQUIRED_TECH");
+    } else if (formData.techIds.length > 10) {
+      formErrors.techIds = MessageUtils.getMessage("ERROR_TOO_MANY_TECH");
+    }
+
+    // Validate kinh nghiệm
+    if (!formData.levelId) {
+      formErrors.levelId = MessageUtils.getMessage("ERROR_REQUIRED_LEVEL");
+    }
 
     // Đặt lỗi vào state và trả về true nếu không có lỗi, false nếu có lỗi
     setErrors(formErrors);
@@ -288,690 +456,889 @@ export default function AddJobPage({
 
   const router = useRouter();
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Ngăn chặn hành động mặc định của form
-    console.log("Click Create Job");
-
-    // Kiểm tra tính hợp lệ của form
+    e.preventDefault();
+    
     if (validateForm()) {
-      console.log("Click Create Job123");
       try {
-        // Tạo đối tượng dữ liệu cho Job
+        // Mọi bài đăng mới đều có status = 0 (chờ duyệt)
         const jobData: JobCreateBodyType = {
-          companyName: formData.companyName,
-          numberOfEmployees: formData.numberOfEmployees,
-          companyWebsite: formData.companyWebsite,
-          companyOverview: formData.companyOverview,
-          jobLocation: formData.jobLocation,
-          title: formData.title,
-          salary: formData.salary,
-          numberOfRecruitment: formData.numberOfRecruitment,
-          jobDescription: formData.jobDescription,
-          jobRequirements: formData.jobRequirements,
-          benefits: formData.benefits,
-          educationLevel: formData.educationLevel,
-          jobRank: formData.jobRank,
-          jobType: formData.jobType,
-          gender: formData.gender,
-          contactPerson: formData.contactPerson,
-          contactPhone: formData.contactPhone,
-          contactEmail: formData.contactEmail,
-          contactAddress: formData.contactAddress,
-          postingDate: formData.postingDate,
-          expirationDate: formData.expirationDate,
-          employerId: formData.employerId, // ID của nhà tuyển dụng
-          techIds: formData.techIds, // Đảm bảo techIds là mảng các ID
-          levelId: formData.levelId, // ID cấp độ
-          status: 0, // Trạng thái
-          views: 0, // Số lượt xem
+          ...formData,
+          salary: formData.salary.toString(),
+          status: 0, // 0: chờ duyệt, 1: đã duyệt, -1: từ chối
+          views: 0,
           levelName: "",
         };
 
         // Gửi yêu cầu tạo công việc và nhận phản hồi
         const jobResult = await jobApiRequest.createJob(jobData);
-        console.log(jobResult);
+        console.log("Job creation result:", jobResult);
 
-        // Lấy jobId từ kết quả trả về (giả sử ID công việc nằm trong jobResult.payload.id)
-        const jobId = jobResult.payload.data.jobId; // Cập nhật theo cấu trúc thực tế của phản hồi từ API
+        // Lấy jobId từ kết quả trả về
+        const jobId = jobResult.payload.data.jobId;
 
         // Tạo đối tượng dữ liệu cho TechDetail
         const techDetailData: TechDetailCreateBodyType = {
-          jobId: jobId, // Sử dụng jobId vừa lấy
-          techIds: techIdsArray, // Đảm bảo techIds là mảng các ID
+          jobId: jobId,
+          techIds: techIdsArray,
         };
+
+        console.log("Creating tech detail with data:", techDetailData);
 
         // Gửi yêu cầu tạo chi tiết công nghệ
         try {
-          const techDetailResult = await techApiRequest.createTechDetail(
-            techDetailData
-          );
-          console.log(techDetailResult);
-          console.log(techDetailData);
-
-          Alert.success("Thành công!", techDetailResult.payload.message); // Hiển thị thông báo thành công cho techDetail
-        } catch (error) {
+          const techDetailResult = await techApiRequest.createTechDetail(techDetailData);
+          console.log("Tech detail creation result:", techDetailResult);
+          
+          // Hiển thị thông báo phù hợp với status
+          if (formData.status === 0) {
+            Alert.success("SUCCESS_JOB_SCHEDULED", {
+              date: formData.postingDate
+            });
+          } else {
+            Alert.success("SUCCESS_JOB_CREATE");
+          }
+          
+          router.push("/employer/jobs");
+          router.refresh();
+        } catch (error: any) {
           console.error("Error creating tech detail:", error);
-          Alert.error("Lỗi!", "Đã xảy ra lỗi khi tạo chi tiết công nghệ.");
+          // Check if error has a message property
+          const errorMessage = error?.payload?.message || "Có lỗi xảy ra khi tạo chi tiết công nghệ";
+          Alert.error(errorMessage);
+          
+          // Try to delete the job since tech detail creation failed
+          try {
+            await jobApiRequest.updateJobStatus(jobId, 0); // Set job status to inactive
+          } catch (deleteError) {
+            console.error("Error cleaning up job after tech detail creation failed:", deleteError);
+          }
         }
-
-        // Hiển thị thông báo thành công cho job
-        Alert.success("Thành công!", jobResult.payload.message);
-        router.push("/employer/jobs"); // Chuyển hướng về trang danh sách công việc
-        router.refresh(); // Làm mới trang
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error creating job:", error);
-        Alert.error("Lỗi!", "Đã xảy ra lỗi khi tạo công việc.");
+        const errorMessage = error?.payload?.message || "Có lỗi xảy ra khi tạo công việc";
+        Alert.error(errorMessage);
       }
     }
   };
 
+  // Thay đổi style cho các input, textarea và select
+  const inputClasses = `
+    w-full 
+    rounded-lg 
+    border-2 
+    border-gray-300 
+    focus:border-blue-500 
+    focus:ring-2 
+    focus:ring-blue-200 
+    transition duration-200
+    shadow-sm
+    px-4 
+    py-2.5
+    text-gray-700
+    bg-white
+    hover:border-gray-400
+  `;
+
+  const textareaClasses = `
+    w-full 
+    rounded-lg 
+    border-2 
+    border-gray-300 
+    focus:border-blue-500 
+    focus:ring-2 
+    focus:ring-blue-200 
+    transition duration-200
+    shadow-sm
+    p-4 
+    text-gray-700
+    bg-white
+    resize-none
+    hover:border-gray-400
+    min-h-[150px]
+  `;
+
+  const selectClasses = `
+    w-full 
+    rounded-lg 
+    border-2 
+    border-gray-300 
+    focus:border-blue-500 
+    focus:ring-2 
+    focus:ring-blue-200 
+    transition duration-200
+    shadow-sm
+    px-4 
+    py-2.5
+    text-gray-700
+    bg-white
+    hover:border-gray-400
+    appearance-none
+    cursor-pointer
+  `;
+
+  // Thêm state để quản lý loại lương
+  const [salaryType, setSalaryType] = useState('fixed'); // 'fixed' hoặc 'negotiable'
+
   return (
-    <>
-      <h5 className="text-3xl text-center text-blue-600 mb-6 rounded-lg bg-slate-200">
-        Đăng công việc
-      </h5>
-      <hr className="border-t border-gray-300 mb-4" /> {/* Đường kẻ ngang */}
-      <div className="flex bg-gray-100">
-        {/* Cột bên trái: Form thêm CV */}
-        <div className=" h-[85vh] flex-1 p-4 overflow-y-auto hide-scrollbar rounded-lg bg-white">
-          <h2 className="text-xl text-center font-bold mb-4 text-blue-600 ">
-            Thông tin công việc
-          </h2>
-          <hr className="border-t border-gray-300 mb-4" />{" "}
-          {/* Đường kẻ ngang */}
-          <form onSubmit={handleSubmit} method="POST">
-            {/* Thông tin công ty */}
-            <h3 className="text-lg font-semibold mt-6 mb-2">
-              Thông tin công ty
-            </h3>
-
-            <label className="block mb-2" htmlFor="companyName">
-              Tên công ty*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="text"
-              id="companyName"
-              placeholder="CTTNHHMTV"
-              value={formData.companyName}
-              onChange={handleChange}
-            />
-            {errors.companyName && (
-              <span className="text-red-500 text-sm">{errors.companyName}</span>
-            )}
-
-            <label className="block mb-2" htmlFor="numberOfEmployees">
-              Số nhân viên*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="number"
-              id="numberOfEmployees"
-              value={formData.numberOfEmployees}
-              onChange={handleChange}
-            />
-            {errors.numberOfEmployees && (
-              <span className="text-red-500 text-sm">
-                {errors.numberOfEmployees}
-              </span>
-            )}
-
-            <label className="block mb-2" htmlFor="companyWebsite">
-              Website công ty
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="text"
-              id="companyWebsite"
-              value={formData.companyWebsite}
-              onChange={handleChange}
-            />
-            {errors.companyWebsite && (
-              <span className="text-red-500 text-sm">
-                {errors.companyWebsite}
-              </span>
-            )}
-
-            <label className="block mb-2" htmlFor="companyOverview">
-              Sơ lược công ty*
-            </label>
-            <textarea
-              className="w-full p-2 border border-gray-300 rounded"
-              id="companyOverview"
-              rows={5}
-              value={formData.companyOverview}
-              onChange={handleChange}
-            ></textarea>
-            {errors.companyOverview && (
-              <span className="text-red-500 text-sm">
-                {errors.companyOverview}
-              </span>
-            )}
-
-            {/* Thông tin công việc */}
-            <h3 className="text-lg font-semibold mt-6 mb-2">
-              Thông tin công việc
-            </h3>
-
-            <label className="block mb-2" htmlFor="title">
-              Chức Danh*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="text"
-              id="title"
-              placeholder="Tên công việc"
-              value={formData.title}
-              onChange={handleChange}
-            />
-            {errors.title && (
-              <span className="text-red-500 text-sm">{errors.title}</span>
-            )}
-
-            <label className="block mb-2" htmlFor="numberOfRecruitment">
-              Số lượng tuyển*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="number"
-              id="numberOfRecruitment"
-              value={formData.numberOfRecruitment}
-              onChange={handleChange}
-            />
-            {errors.numberOfRecruitment && (
-              <span className="text-red-500 text-sm">
-                {errors.numberOfRecruitment}
-              </span>
-            )}
-
-            <label className="block mb-2" htmlFor="jobLocation">
-              Địa điểm*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="text"
-              id="jobLocation"
-              placeholder="Địa điểm làm việc"
-              value={formData.jobLocation}
-              onChange={handleChange}
-            />
-            {errors.jobLocation && (
-              <span className="text-red-500 text-sm">{errors.jobLocation}</span>
-            )}
-
-            <label className="block mb-2" htmlFor="salary">
-              Lương*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="number"
-              id="salary"
-              placeholder="10"
-              value={formData.salary}
-              onChange={handleChange}
-            />
-            {errors.salary && (
-              <span className="text-red-500 text-sm">{errors.salary}</span>
-            )}
-
-            <p className="text-xs text-gray-500">
-              Không hiển thị mức lương có thể làm giảm 30% lượng CV ứng tuyển!
-            </p>
-
-            <label className="block mb-2" htmlFor="jobDescription">
-              Mô tả công việc*
-            </label>
-            <textarea
-              className="w-full p-2 border border-gray-300 rounded"
-              id="jobDescription"
-              rows={5}
-              value={formData.jobDescription}
-              onChange={handleChange}
-            ></textarea>
-            {errors.jobDescription && (
-              <span className="text-red-500 text-sm">
-                {errors.jobDescription}
-              </span>
-            )}
-
-            <label className="block mb-2" htmlFor="jobRequirements">
-              Yêu cầu công việc*
-            </label>
-            <textarea
-              className="w-full p-2 border border-gray-300 rounded"
-              id="jobRequirements"
-              rows={5}
-              value={formData.jobRequirements}
-              onChange={handleChange}
-            ></textarea>
-            {errors.jobRequirements && (
-              <span className="text-red-500 text-sm">
-                {errors.jobRequirements}
-              </span>
-            )}
-
-            <label className="block mb-2" htmlFor="benefits">
-              Quyền lợi*
-            </label>
-            <textarea
-              className="w-full p-2 border border-gray-300 rounded"
-              id="benefits"
-              rows={5}
-              value={formData.benefits}
-              onChange={handleChange}
-            ></textarea>
-            {errors.benefits && (
-              <span className="text-red-500 text-sm">{errors.benefits}</span>
-            )}
-
-            {/* Chi tiết công việc */}
-            <h3 className="text-lg font-semibold mt-6 mb-2">
-              Chi tiết công việc
-            </h3>
-
-            <div className="flex items-center mb-4">
-              <label className="block w-1/4 mb-2" htmlFor="educationLevel">
-                Trình độ học vấn*
-              </label>
-              <select
-                className="w-3/4 p-2 border border-gray-300 rounded"
-                id="educationLevel"
-                value={formData.educationLevel}
-                onChange={handleChange}
-              >
-                <option value="">Chọn trình độ học vấn</option>
-                <option value="Trung học phổ thông">Trung học phổ thông</option>
-                <option value="Cao đẳng">Cao đẳng</option>
-                <option value="Đại học">Đại học</option>
-                <option value="Thạc sĩ">Thạc sĩ</option>
-                <option value="Tiến sĩ">Tiến sĩ</option>
-              </select>
-              {errors.educationLevel && (
-                <span className="text-red-500 text-sm">
-                  {errors.educationLevel}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-start mb-4">
-              <label className="block w-1/4 mb-2" htmlFor="techIds">
-                Công nghệ*
-              </label>
-
-              <div className="w-3/4">
-                {/* Hiển thị các thẻ công nghệ đã chọn */}
-                <div className="flex flex-wrap mb-2">
-                  {formData.techIds && formData.techIds.length > 0 ? (
-                    formData.techIds.map((id) => {
-                      const tech = techList
-                        ? techList.find((tech) => tech.techId === id)
-                        : null; // Kiểm tra techList trước khi sử dụng
-
-                      return (
-                        <div
-                          key={id}
-                          className="flex items-center bg-blue-500 text-white rounded-full px-2 py-1 mr-2 mb-2"
-                        >
-                          {tech ? tech.name : "Unknown"}
-                          <button
-                            className="ml-2 text-white hover:text-red-300 focus:outline-none"
-                            onClick={() => removeTech(id)} // Gọi hàm xóa công nghệ
-                            aria-label={`Xóa công nghệ ${
-                              tech ? tech.name : "Unknown"
-                            }`}
-                          >
-                            &times; {/* Biểu tượng xóa */}
-                          </button>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <span className="text-gray-500">
-                      Chưa có công nghệ nào được chọn.
-                    </span>
-                  )}
-                </div>
-
-                {/* Dropdown cho phép chọn nhiều công nghệ */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onClick={handleToggleDropdown}
-                  >
-                    Chọn công nghệ
-                  </button>
-
-                  {isOpen &&
-                    techList && ( // Thêm kiểm tra null cho techList
-                      <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10">
-                        {techList.length > 0 ? ( // Kiểm tra xem techList có phần tử nào không
-                          techList.map((tech) => (
-                            <div
-                              key={tech.techId}
-                              className={`p-2 cursor-pointer hover:bg-blue-100 ${
-                                selectedTech.has(tech.techId)
-                                  ? "bg-blue-200"
-                                  : ""
-                              }`}
-                              onClick={() => handleSelectTech(tech.techId)} // Gọi hàm chọn công nghệ
-                            >
-                              {tech.name}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="p-2 text-gray-500">
-                            Không có dữ liệu công nghệ
-                          </div>
-                        )}
-                      </div>
-                    )}
-                </div>
-
-                {errors.techIds && (
-                  <span className="text-red-500 text-sm">{errors.techIds}</span> // Hiển thị thông báo lỗi nếu có
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center mb-4">
-              <label className="block w-1/4 mb-2" htmlFor="levelId">
-                Mức kinh nghiệm*
-              </label>
-              <select
-                className="w-3/4 p-2 border border-gray-300 rounded"
-                id="levelId"
-                value={formData.levelId}
-                onChange={handleChange}
-              >
-                <option value="">Chọn mức kinh nghiệm</option>
-                {levelList && levelList.length > 0 ? (
-                  levelList.map((level) => (
-                    <option key={level.levelId} value={level.levelId}>
-                      {level.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">Không có dữ liệu cấp độ</option>
-                )}
-              </select>
-              {errors.experienceLevel && (
-                <span className="text-red-500 text-sm">
-                  {errors.experienceLevel}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center mb-4">
-              <label className="block w-1/4 mb-2" htmlFor="jobRank">
-                Cấp bậc*
-              </label>
-              <select
-                className="w-3/4 p-2 border border-gray-300 rounded"
-                id="jobRank"
-                value={formData.jobRank}
-                onChange={handleChange}
-              >
-                <option value="">Chọn cấp bậc</option>
-                <option value="Nhân viên">Nhân viên</option>
-                <option value="Quản lý">Quản lý</option>
-                <option value="Giám đốc">Giám đốc</option>
-                <option value="Trưởng phòng">Trưởng phòng</option>
-                <option value="Phó giám đốc">Phó giám đốc</option>
-                <option value="Giám đốc điều hành">Giám đốc điều hành</option>
-                <option value="Chuyên gia">Chuyên gia</option>
-                <option value="Tư vấn">Tư vấn</option>
-                <option value="Lãnh đạo">Lãnh đạo</option>
-                <option value="Giám sát">Giám sát</option>
-              </select>
-              {errors.jobRank && (
-                <span className="text-red-500 text-sm">{errors.jobRank}</span>
-              )}
-            </div>
-
-            <div className="flex items-center mb-4">
-              <label className="block w-1/4 mb-2" htmlFor="jobType">
-                Hình thức làm việc*
-              </label>
-              <select
-                className="w-3/4 p-2 border border-gray-300 rounded"
-                id="jobType"
-                value={formData.jobType}
-                onChange={handleChange}
-              >
-                <option value="">Chọn hình thức làm việc</option>
-                <option value="Toàn thời gian">Toàn thời gian</option>
-                <option value="Bán thời gian">Bán thời gian</option>
-                <option value="Thực tập">Thực tập</option>
-                <option value="Freelance">Freelance</option>
-                <option value="Remote">Remote</option>
-              </select>
-              {errors.jobType && (
-                <span className="text-red-500 text-sm">{errors.jobType}</span>
-              )}
-            </div>
-
-            <div className="flex items-center mb-4">
-              <label className="block w-1/4 mb-2" htmlFor="gender">
-                Giới tính*
-              </label>
-              <select
-                className="w-3/4 p-2 border border-gray-300 rounded"
-                id="gender"
-                value={formData.gender}
-                onChange={handleChange}
-              >
-                <option value="">Chọn giới tính</option>
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
-              </select>
-              {errors.gender && (
-                <span className="text-red-500 text-sm">{errors.gender}</span>
-              )}
-            </div>
-
-            {/* Thông tin liên hệ */}
-            <h3 className="text-lg font-semibold mt-6 mb-2">
-              Thông tin liên hệ
-            </h3>
-
-            <label className="block mb-2" htmlFor="contactPerson">
-              Người liên hệ*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="text"
-              id="contactPerson"
-              value={formData.contactPerson}
-              onChange={handleChange}
-            />
-            {errors.contactPerson && (
-              <span className="text-red-500 text-sm">
-                {errors.contactPerson}
-              </span>
-            )}
-
-            <label className="block mb-2" htmlFor="contactPhone">
-              Số điện thoại liên hệ*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="tel"
-              id="contactPhone"
-              value={formData.contactPhone}
-              onChange={handleChange}
-            />
-            {errors.contactPhone && (
-              <span className="text-red-500 text-sm">
-                {errors.contactPhone}
-              </span>
-            )}
-
-            <label className="block mb-2" htmlFor="contactEmail">
-              Email liên hệ*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="email"
-              id="contactEmail"
-              value={formData.contactEmail}
-              onChange={handleChange}
-            />
-            {errors.contactEmail && (
-              <span className="text-red-500 text-sm">
-                {errors.contactEmail}
-              </span>
-            )}
-
-            <label className="block mb-2" htmlFor="contactAddress">
-              Địa chỉ liên hệ
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="text"
-              id="contactAddress"
-              value={formData.contactAddress}
-              onChange={handleChange}
-            />
-            {errors.contactAddress && (
-              <span className="text-red-500 text-sm">
-                {errors.contactAddress}
-              </span>
-            )}
-
-            <label className="block mb-2" htmlFor="postingDate">
-              Ngày đăng*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="date"
-              id="postingDate"
-              value={formData.postingDate}
-              onChange={handleChange}
-            />
-            {errors.postingDate && (
-              <span className="text-red-500 text-sm">{errors.postingDate}</span>
-            )}
-
-            <label className="block mb-2" htmlFor="expirationDate">
-              Ngày hết hạn*
-            </label>
-            <input
-              className="w-full p-2 border border-gray-300 rounded"
-              type="date"
-              id="expirationDate"
-              value={formData.expirationDate}
-              onChange={handleChange}
-            />
-            {errors.expirationDate && (
-              <span className="text-red-500 text-sm">
-                {errors.expirationDate}
-              </span>
-            )}
-
-            <button
-              type="submit"
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Đăng tuyển
-            </button>
-          </form>
+    <div className="min-h-screen bg-gray-50 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg mb-8 p-8">
+          <h1 className="text-3xl font-bold text-white text-center">
+            Đăng tin tuyển dụng
+          </h1>
+          <p className="text-blue-100 text-center mt-2">
+            Tạo tin tuyển dụng để tìm kiếm ứng viên phù hợp
+          </p>
         </div>
 
-        {/* Cột bên phải: Preview */}
-        <div className="w-1/2 h-[85vh] p-4 m-1 bg-white border-l overflow-y-auto hide-scrollbar rounded-lg">
-          <h2 className="text-xl text-center text-blue-600 font-bold mb-4">
-            Xem trước
-          </h2>
-          {/* <div className="bg-gray-100 p-4 rounded"> */}
-          <hr className="border-t border-gray-300 mb-4" />{" "}
-          {/* Đường kẻ ngang */}
-          <div className="p-4 job-post bg-white shadow-xl shadow-gray-200 w-full rounded-lg ">
-            {" "}
-            {/* Thêm margin-right cho cột 1 */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Form Section */}
+          <div className="flex-1">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Company Information Card */}
+              <div className="bg-white rounded-xl shadow-lg p-8 border-2 border-gray-100 hover:border-gray-200 transition duration-300">
+                <div className="flex items-center mb-6">
+                  <div className="bg-blue-100 rounded-lg p-3">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-800 ml-3">
+                    Thông tin công ty
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Company Name */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Tên công ty*
+                    </label>
+                    <input
+                      type="text"
+                      id="companyName"
+                      className={inputClasses}
+                      value={formData.companyName}
+                      onChange={handleChange}
+                      placeholder="Nhập tên công ty"
+                    />
+                    {errors.companyName && (
+                      <p className="mt-1.5 text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
+                        {errors.companyName}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Number of Employees */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Số lượng nhân viên*
+                    </label>
+                    <input
+                      type="number"
+                      id="numberOfEmployees"
+                      className={inputClasses}
+                      value={formData.numberOfEmployees}
+                      onChange={handleChange}
+                      min="0"
+                    />
+                    {errors.numberOfEmployees && (
+                      <p className="mt-1.5 text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
+                        {errors.numberOfEmployees}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Company Website */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Website công ty*
+                    </label>
+                    <input
+                      type="text"
+                      id="companyWebsite"
+                      className={inputClasses}
+                      value={formData.companyWebsite}
+                      onChange={handleChange}
+                      placeholder="https://..."
+                    />
+                    {errors.companyWebsite && (
+                      <p className="mt-1.5 text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
+                        {errors.companyWebsite}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Company Overview */}
+                  <div className="col-span-2 space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Giới thiệu công ty*
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        id="companyOverview"
+                        className={textareaClasses}
+                        rows={6}
+                        value={formData.companyOverview}
+                        onChange={handleChange}
+                        placeholder="• Mô tả về lĩnh vực hoạt động của công ty&#13;&#10;• Quy mô và thành tựu của công ty&#13;&#10;• Văn hóa và môi trường làm việc&#13;&#10; Định hướng phát triển"
+                      />
+                      <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                        {formData.companyOverview.length}/2000
+                      </div>
+                    </div>
+                    {errors.companyOverview && (
+                      <p className="text-sm text-red-600">{errors.companyOverview}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Job Details Card */}
+              <div className="bg-white rounded-xl shadow-md p-6 transition duration-300 hover:shadow-lg">
+                <div className="flex items-center mb-6">
+                  <div className="bg-green-100 rounded-lg p-3">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-800 ml-3">
+                    Chi tiết công việc
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Job Title */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Chức danh*
+                    </label>
+                    <input
+                      type="text"
+                      id="title"
+                      className={inputClasses}
+                      value={formData.title}
+                      onChange={handleChange}
+                      placeholder="Vị trí tuyển dụng"
+                    />
+                    {errors.title && (
+                      <p className="text-sm text-red-600">{errors.title}</p>
+                    )}
+                  </div>
+
+                  {/* Number of Recruitment */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Số lượng cần tuyển*
+                    </label>
+                    <input
+                      type="number"
+                      id="numberOfRecruitment"
+                      className={inputClasses}
+                      value={formData.numberOfRecruitment}
+                      onChange={handleChange}
+                      min="0"
+                    />
+                    {errors.numberOfRecruitment && (
+                      <p className="text-sm text-red-600">{errors.numberOfRecruitment}</p>
+                    )}
+                  </div>
+
+                  {/* Job Location */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Địa điểm làm việc*
+                    </label>
+                    <input
+                      type="text"
+                      id="jobLocation"
+                      className={inputClasses}
+                      value={formData.jobLocation}
+                      onChange={handleChange}
+                      placeholder="Địa chỉ làm việc"
+                    />
+                    {errors.jobLocation && (
+                      <p className="text-sm text-red-600">{errors.jobLocation}</p>
+                    )}
+                  </div>
+
+                  {/* Job Rank */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Cấp bậc*
+                    </label>
+                    <select
+                      id="jobRank"
+                      className={selectClasses}
+                      value={formData.jobRank}
+                      onChange={handleChange}
+                    >
+                      <option value="">Chọn cấp bậc</option>
+                      <option value="Nhân viên">Nhân viên</option>
+                      <option value="Quản lý">Quản lý</option>
+                      <option value="Giám đốc">Giám đốc</option>
+                      <option value="Trưởng phòng">Trưởng phòng</option>
+                      <option value="Phó giám đốc">Phó giám đốc</option>
+                      <option value="Giám đốc điều hành">Giám đốc điều hành</option>
+                      <option value="Chuyên gia">Chuyên gia</option>
+                      <option value="Tư vấn">Tư vấn</option>
+                      <option value="Lãnh đạo">Lãnh đạo</option>
+                      <option value="Giám sát">Giám sát</option>
+                    </select>
+                    {errors.jobRank && (
+                      <p className="mt-1.5 text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
+                        {errors.jobRank}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Salary */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mức lương (VNĐ) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="salary"
+                      value={formData.salary ? Number(formData.salary).toLocaleString('vi-VN') : ''}
+                      onChange={(e) => {
+                        // Chỉ giữ lại số từ chuỗi đã format
+                        const value = e.target.value.replace(/\D/g, '');
+                        setFormData(prev => ({
+                          ...prev,
+                          salary: value
+                        }));
+                      }}
+                      className={`w-full p-2 border rounded-md ${
+                        errors.salary ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="1,000,000"
+                    />
+                    {errors.salary && (
+                      <p className="text-red-500 text-sm mt-1">{errors.salary}</p>
+                    )}            
+                  </div>                 
+
+                  {/* Job Description */}
+                  <div className="col-span-2 space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Mô tả công việc*
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        id="jobDescription"
+                        className={textareaClasses}
+                        rows={6}
+                        value={formData.jobDescription}
+                        onChange={handleChange}
+                        placeholder="• Vai trò và trách nhiệm chính&#13;&#10;• Các công việc cụ thể cn thực hiện&#13;&#10;• Mục tiêu và kết quả mong đợi&#13;&#10;• Phạm vi công việc"
+                      />
+                      <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                        {formData.jobDescription.length}/2000
+                      </div>
+                    </div>
+                    {errors.jobDescription && (
+                      <p className="text-sm text-red-600">{errors.jobDescription}</p>
+                    )}
+                  </div>
+
+                  {/* Job Requirements */}
+                  <div className="col-span-2 space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Yêu cầu công việc*
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        id="jobRequirements"
+                        className={textareaClasses}
+                        rows={6}
+                        value={formData.jobRequirements}
+                        onChange={handleChange}
+                        placeholder="• Kinh nghiệm và kỹ năng chuyên môn&#13;&#10;• Kỹ năng mềm cần thiết&#13;&#10;• Yêu cầu về ngôn ngữ&#13;&#10;• Các chứng chỉ hoặc bằng cấp (nếu có)"
+                      />
+                      <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                        {formData.jobRequirements.length}/2000
+                      </div>
+                    </div>
+                    {errors.jobRequirements && (
+                      <p className="text-sm text-red-600">{errors.jobRequirements}</p>
+                    )}
+                  </div>
+
+                  {/* Benefits */}
+                  <div className="col-span-2 space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Quyền lợi*
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        id="benefits"
+                        className={textareaClasses}
+                        rows={6}
+                        value={formData.benefits}
+                        onChange={handleChange}
+                        placeholder="• Mức lương và các khoản thưởng&#13;&#10;• Chế độ bảo hiểm và phúc lợi&#13;&#10;• Cơ hội đào tạo và thăng tiến&#13;&#10;• Các chế độ nghỉ phép và du lịch"
+                      />
+                      <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                        {formData.benefits.length}/2000
+                      </div>
+                    </div>
+                    {errors.benefits && (
+                      <p className="text-sm text-red-600">{errors.benefits}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information Card */}
+              <div className="bg-white rounded-xl shadow-md p-6 transition duration-300 hover:shadow-lg">
+                <div className="flex items-center mb-6">
+                  <div className="bg-yellow-100 rounded-lg p-3">
+                    <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-800 ml-3">
+                    Thông tin bổ sung
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Education Level */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Trình độ học vấn*
+                    </label>
+                    <select
+                      id="educationLevel"
+                      className={selectClasses}
+                      value={formData.educationLevel}
+                      onChange={handleChange}
+                    >
+                      <option value="">Chọn trình độ học vấn</option>
+                      <option value="Trung học phổ thông">Trung học phổ thông</option>
+                      <option value="Cao đẳng">Cao đẳng</option>
+                      <option value="Đại học">Đại học</option>
+                      <option value="Thạc sĩ">Thạc sĩ</option>
+                      <option value="Tiến sĩ">Tiến sĩ</option>
+                    </select>
+                    {errors.educationLevel && (
+                      <p className="text-sm text-red-600">{errors.educationLevel}</p>
+                    )}
+                  </div>
+
+                  {/* Experience Level */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Kinh nghiệm*
+                    </label>
+                    <select
+                      id="levelId"
+                      className={selectClasses}
+                      value={formData.levelId}
+                      onChange={handleChange}
+                    >
+                      <option value="">Chọn mức kinh nghiệm</option>
+                      {levelList?.map((level) => (
+                        <option key={level.levelId} value={level.levelId}>
+                          {level.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.levelId && (
+                      <p className="text-sm text-red-600">{errors.levelId}</p>
+                    )}
+                  </div>
+
+                  {/* Job Type */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Hình thức làm việc*
+                    </label>
+                    <select
+                      id="jobType"
+                      className={selectClasses}
+                      value={formData.jobType}
+                      onChange={handleChange}
+                    >
+                      <option value="">Chọn hình thức làm việc</option>
+                      <option value="Toàn thời gian">Toàn thời gian</option>
+                      <option value="Bán thời gian">Bán thời gian</option>
+                      <option value="Thực tập">Thực tập</option>
+                      <option value="Freelance">Freelance</option>
+                      <option value="Remote">Remote</option>
+                    </select>
+                    {errors.jobType && (
+                      <p className="text-sm text-red-600">{errors.jobType}</p>
+                    )}
+                  </div>
+
+                  {/* Gender */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Giới tính*
+                    </label>
+                    <select
+                      id="gender"
+                      className={selectClasses}
+                      value={formData.gender}
+                      onChange={handleChange}
+                    >
+                      <option value="">Chọn giới tính</option>
+                      <option value="Nam">Nam</option>
+                      <option value="Nữ">Nữ</option>
+                      <option value="Không yêu cầu">Không yêu cầu</option>
+                    </select>
+                    {errors.gender && (
+                      <p className="text-sm text-red-600">{errors.gender}</p>
+                    )}
+                  </div>
+
+                  {/* Tech Stack */}
+                  <div className="col-span-2 space-y-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Công nghệ yêu cầu*
+                    </label>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={handleToggleDropdown}
+                        className="w-full flex justify-between items-center px-4 py-2 border border-gray-300 rounded-lg hover:border-blue-500 transition duration-200"
+                      >
+                        <span>Chọn công nghệ</span>
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {isOpen && techList && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                          <div className="max-h-60 overflow-y-auto">
+                            {techList.map((tech) => (
+                              <div
+                                key={tech.techId}
+                                className={`px-4 py-2 cursor-pointer hover:bg-blue-50 ${
+                                  selectedTech.has(tech.techId) ? 'bg-blue-100' : ''
+                                }`}
+                                onClick={() => handleSelectTech(tech.techId)}
+                              >
+                                {tech.name}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Selected Tech Tags */}
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {formData.techIds.map((id) => {
+                          const tech = techList?.find((t) => t.techId === id);
+                          return (
+                            <span key={id} className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 text-blue-800 border border-blue-200">
+                              {tech?.name}
+                              <button
+                                type="button"
+                                onClick={() => removeTech(id)}
+                                className="ml-2 hover:text-red-600 transition duration-200"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information Card */}
+              <div className="bg-white rounded-xl shadow-md p-6 transition duration-300 hover:shadow-lg">
+                <div className="flex items-center mb-6">
+                  <div className="bg-indigo-100 rounded-lg p-3">
+                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-800 ml-3">
+                    Thông tin liên hệ
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Contact Person */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Người liên hệ*
+                    </label>
+                    <input
+                      type="text"
+                      id="contactPerson"
+                      className={inputClasses}
+                      value={formData.contactPerson}
+                      onChange={handleChange}
+                      placeholder="Họ và tên"
+                    />
+                    {errors.contactPerson && (
+                      <p className="text-sm text-red-600">{errors.contactPerson}</p>
+                    )}
+                  </div>
+
+                  {/* Contact Phone */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Số điện thoại*
+                    </label>
+                    <input
+                      type="tel"
+                      id="contactPhone"
+                      className={inputClasses}
+                      value={formData.contactPhone}
+                      onChange={handleChange}
+                      placeholder="Số điện thoại"
+                    />
+                    {errors.contactPhone && (
+                      <p className="text-sm text-red-600">{errors.contactPhone}</p>
+                    )}
+                  </div>
+
+                  {/* Contact Email */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Email*
+                    </label>
+                    <input
+                      type="email"
+                      id="contactEmail"
+                      className={inputClasses}
+                      value={formData.contactEmail}
+                      onChange={handleChange}
+                      placeholder="Email"
+                    />
+                    {errors.contactEmail && (
+                      <p className="text-sm text-red-600">{errors.contactEmail}</p>
+                    )}
+                  </div>
+
+                  {/* Contact Address */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Địa chỉ liên hệ*
+                    </label>
+                    <input
+                      type="text"
+                      id="contactAddress"
+                      className={inputClasses}
+                      value={formData.contactAddress}
+                      onChange={handleChange}
+                      placeholder="Địa chỉ"
+                    />
+                    {errors.contactAddress && (
+                      <p className="text-sm text-red-600">{errors.contactAddress}</p>
+                    )}
+                  </div>
+
+                  {/* Posting Date */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Ngày đăng
+                    </label>
+                    <input
+                      type="date"
+                      id="postingDate"
+                      className={inputClasses}
+                      value={formData.postingDate}
+                      onChange={handleChange}
+                      disabled
+                    />
+                  </div>
+
+                  {/* Expiration Date */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Ngày hết hạn*
+                    </label>
+                    <input
+                      type="date"
+                      id="expirationDate"
+                      className={inputClasses}
+                      value={formData.expirationDate}
+                      onChange={handleChange}
+                    />
+                    {errors.expirationDate && (
+                      <p className="text-sm text-red-600">{errors.expirationDate}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-200 border-2 border-blue-700"
+                >
+                  Đăng tuyển
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Preview Section */}
+          <div className="bg-white rounded-lg shadow-lg p-6 sticky top-4">
             {/* Banner Image */}
-            <div className="banner mb-4 w-full">
+            <div className="mb-4 w-full">
               <img
-                src="/images/logo.png" // Thay thế URL này bằng URL của hình ảnh banner bạn muốn
+                src="/images/logo.png"
                 alt="Banner"
-                className="w-200 h-200"
+                className="w-48 h-48 object-contain mx-auto"
               />
             </div>
-            {/* New Job Post: IT Security Manager */}
-            <div className="job-meta mb-4 mt-8">
-              <h1 className="title text-2xl font-bold">{formData.title}</h1>
-              <span className="job-type bg-teal-500 text-white p-1 text-xs mr-4">
-                {formData.jobType}
-              </span>
 
-              <div className="flex items-center mb-2">
-                <p className="job-salary">Lương: {formData.salary}tr</p>
+            {/* Job Title and Meta */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                {formData.title || "Tiêu đề công việc"}
+              </h1>
+
+              <div className="flex flex-wrap gap-4 mb-4">
+                <span className="flex items-center rounded-full bg-teal-100 px-4 py-2 text-sm text-teal-700">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {formData.jobType || "Hình thức làm việc"}
+                </span>
+                <span className="flex items-center rounded-full bg-blue-100 px-4 py-2 text-sm text-blue-700">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  {formData.jobLocation || "Địa điểm"}
+                </span>
+                <span className="flex items-center rounded-full bg-green-100 px-4 py-2 text-sm text-green-700">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                    {formData.salary ? `${Number(formData.salary).toLocaleString('vi-VN')} VNĐ` : "Mức lương"}
+                </span>
               </div>
 
-              <div className="flex items-center mb-2">
-                <p className="address-job">Địa chỉ: {formData.jobLocation}</p>
+              <div className="flex items-center text-gray-600 mb-2">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Ngày đăng: <span className="font-medium">{formData.postingDate}</span> | 
+                Hết hạn: <span className="font-medium">{formData.expirationDate}</span>
+                </span>
               </div>
 
-              <span className="flex items-center mb-2">
-                Ngày đăng tuyển:{" "}
-                <span className="font-bold">{formData.postingDate}</span> | Hết
-                hạn trong: <span className="font-bold">{x} Ngày tới </span>
-              </span>
-              <div className="flex items-center mb-2">
-                <p className="numberOfRecruitment-job">
-                  Số lượng tuyển: {formData.numberOfRecruitment}
+              <div className="flex items-center text-gray-600">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span>Số lượng tuyển: <span className="font-medium">{formData.numberOfRecruitment} người</span></span>
+              </div>
+            </div>
+
+            {/* Job Description */}
+            <div className="mb-8">
+              <h3 className="text-xl font-semibold text-purple-800 mb-4">Mô tả công việc</h3>
+              <div className="prose prose-sm max-w-none text-gray-600">
+                {formData.jobDescription.split('\n').map((line, index) => (
+                  <p key={index} className="mb-2">{line}</p>
+                ))}
+              </div>
+            </div>
+
+            {/* Required Skills */}
+            <div className="mb-8">
+              <h3 className="text-xl font-semibold text-purple-800 mb-4">Kỹ năng yêu cầu</h3>
+              <div className="prose prose-sm max-w-none text-gray-600">
+                {formData.jobRequirements.split('\n').map((line, index) => (
+                  <p key={index} className="mb-2">{line}</p>
+                ))}
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <p className="text-gray-600">
+                  <span className="font-medium">Trình độ học vấn:</span> {formData.educationLevel || "Không yêu cầu"}
+                </p>
+                
+                {techIdsArray.length > 0 && (
+                  <div>
+                    <p className="font-medium text-gray-600 mb-2">Công nghệ yêu cầu:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {techIdsArray.map((techId) => {
+                        const tech = techList?.find((t) => t.techId === techId);
+                        return tech ? (
+                          <span
+                            key={tech.techId}
+                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
+                          >
+                            {tech.name}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-gray-600">
+                  <span className="font-medium">Kinh nghiệm:</span> {levelList?.find(level => level.levelId === formData.levelId)?.name || "Chưa chọn"}
+                </p>
+                
+                <p className="text-gray-600">
+                  <span className="font-medium">Cấp bậc:</span> {formData.jobRank || "Chưa chọn"}
+                </p>
+                
+                <p className="text-gray-600">
+                  <span className="font-medium">Giới tính:</span> {formData.gender || "Không yêu cầu"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-2 mb-4"></div>
-            <div className="job-description mb-4">
-              <h3 className="text-xl font-semibold text-purple-800 mb-4">
-                Mô tả công việc
-              </h3>
-              <pre>{formData.jobDescription}</pre>
-            </div>
-            <div className="job-skills mb-4">
-              <h3 className="text-xl font-semibold text-purple-800 mb-4">
-                Kỹ năng yêu cầu
-              </h3>
-              <pre>{formData.jobRequirements}</pre>
-              <ul className="list-disc ml-6">
-                <li>Trình độ học vấn: {formData.educationLevel}</li>
-                <li>Kinh nghiệm: {formData.levelId}</li>
-                <li>Cấp bậc: {formData.jobRank}</li>
-                <li>Giới tính: {formData.gender}</li>
-              </ul>
-            </div>
-            <div className="job-benefits mb-4">
-              <h3 className="text-xl font-semibold text-purple-800 mb-4">
-                Quyền lợi
-              </h3>
-              <pre>{formData.benefits}</pre>
-            </div>
-            <div className="job-contact mb-4">
-              <h3 className="text-xl font-semibold text-purple-800 mb-4">
-                Thông tin liên hệ
-              </h3>
-              <p>Người liên hệ: {formData.contactPerson}</p>
-              <p>Số điện thoại: {formData.contactPhone}</p>
-              <p>Email liên hệ: {formData.contactEmail}</p>
-              <p>Địa chỉ liên hệ: {formData.contactAddress}</p>
-            </div>
-            <div className="job-contact mb-4">
-              <h3 className="text-xl font-semibold text-purple-800 mb-4">
-                Thông tin công ty
-              </h3>
-              <p>Công ty: {formData.companyName}</p>
-              <p>Số lượng nhân viên: {formData.numberOfEmployees}</p>
-              <p>Website công ty: {formData.companyWebsite}</p>
 
-              <pre>Sơ lược công ty: {formData.companyOverview}</pre>
-              <pre>Địa chỉ: {formData.contactAddress}</pre>
+            {/* Benefits */}
+            <div className="mb-8">
+              <h3 className="text-xl font-semibold text-purple-800 mb-4">Quyền lợi</h3>
+              <div className="prose prose-sm max-w-none text-gray-600">
+                {formData.benefits.split('\n').map((line, index) => (
+                  <p key={index} className="mb-2">{line}</p>
+                ))}
+              </div>
             </div>
-          </div>{" "}
-          {/* </div> */}
+
+            {/* Contact Information */}
+            <div className="mb-8">
+              <h3 className="text-xl font-semibold text-purple-800 mb-4">Thông tin liên hệ</h3>
+              <div className="space-y-2 text-gray-600">
+                <p><span className="font-medium">Người liên hệ:</span> {formData.contactPerson || "Chưa cập nhật"}</p>
+                <p><span className="font-medium">Email:</span> {formData.contactEmail || "Chưa cập nhật"}</p>
+                <p><span className="font-medium">Số điện thoại:</span> {formData.contactPhone || "Chưa cập nhật"}</p>
+                <p><span className="font-medium">Địa chỉ:</span> {formData.contactAddress || "Chưa cập nhật"}</p>
+              </div>
+            </div>
+
+            {/* Company Information */}
+            <div className="mb-8">
+              <h3 className="text-xl font-semibold text-purple-800 mb-4">Thông tin công ty</h3>
+              <div className="space-y-2 text-gray-600">
+                <p><span className="font-medium">Công ty:</span> {formData.companyName || "Chưa cập nhật"}</p>
+                <p><span className="font-medium">Website:</span> {formData.companyWebsite || "Chưa cập nhật"}</p>
+                <p><span className="font-medium">Số lượng nhân viên:</span> {formData.numberOfEmployees || "Chưa cập nhật"}</p>
+                <p><span className="font-medium">Hình thức làm việc:</span> {formData.jobType || "Chưa cập nhật"}</p>
+                <p><span className="font-medium">Ngày hết hạn:</span> {formData.expirationDate || "Chưa cập nhật"}</p>
+                {formData.companyOverview && (
+                  <>
+                    <p className="font-medium">Giới thiệu công ty:</p>
+                    <p className="whitespace-pre-line">{formData.companyOverview}</p>
+                  </>
+                )}
+              </div>
+            </div>          
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

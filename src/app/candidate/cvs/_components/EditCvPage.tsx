@@ -192,12 +192,12 @@ export default function EditCvPage({
         console.log("CvId: ", cvId);
         const result = await cvApiRequest.updateCv(cvId, formDataRequest);
         console.log("Result from API: ", result);
-        Alert.success("Thành công!", result.payload.message);
+        Alert.success("SUCCESS_CV_UPDATE");
         router.push("/candidate/cvs");
         router.refresh();
       } catch (error) {
         console.error("Error creating cv:", error);
-        Alert.error("Lỗi!", "Đã xảy ra lỗi khi tạo hồ sơ.");
+        Alert.error("ERROR_CV_CREATE");
       }
     }
   };

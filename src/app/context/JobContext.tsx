@@ -4,6 +4,20 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { JobListResType, LevelListResType } from '../schemaValidations/job.schema';
 import jobApiRequest from '../apiRequest/job';
 
+export interface Job {
+  jobId: number;
+  status: number;
+  title: string;
+  companyName: string;
+  jobDescription?: string;
+  jobRequirements?: string;
+  benefits?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  [key: string]: any;
+}
+
 type JobContextType = {
   jobListContext: JobListResType["data"] | null;
   allJobListContext: JobListResType["data"] | null; // Thêm allJobListContext để lưu danh sách tất cả công việc

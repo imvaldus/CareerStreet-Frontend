@@ -155,11 +155,11 @@ export default function AddBlogPage() {
     
     try {
       await blogApiRequest.createBlog(formData);
-      Alert.success("Thành công", "Blog đã được tạo");
+      Alert.success("SUCCESS_BLOG_CREATE");
       router.push("/admin/blog");
     } catch (error) {
       console.error("Error creating blog:", error);
-      Alert.error("Lỗi", "Không thể tạo blog");
+      Alert.error("ERROR_BLOG_CREATE");
     } finally {
       setIsSubmitting(false);
     }

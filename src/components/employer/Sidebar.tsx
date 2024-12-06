@@ -39,7 +39,7 @@ export default function HomePage() {
                   onClick={toggleJobsDropdown}
                   className="flex items-center px-4 py-2 mt-2 text-gray-100 hover:bg-gray-700 rounded-lg w-full text-left"
                 >
-                  <span>Jobs</span>
+                  <span>Quản lý công việc</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className={`h-5 w-5 ml-auto transition-transform ${
@@ -81,7 +81,7 @@ export default function HomePage() {
                   onClick={toggleCandidatesDropdown}
                   className="flex items-center px-4 py-2 mt-2 text-gray-100 hover:bg-gray-700 rounded-lg w-full text-left"
                 >
-                  <span>My Candidates</span>
+                  <span>Quản lý ứng viên</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className={`h-5 w-5 ml-auto transition-transform ${

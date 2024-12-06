@@ -379,7 +379,7 @@ export default function HomePage() {
         <div className="bg-white rounded-xl shadow-sm">
           <div className="p-6 border-b border-gray-100">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">Tin tuyển dụng đang hoạt động</h2>
+              <h2 className="text-lg font-bold text-gray-900">Tin tuyển dụng</h2>
               <Link 
                 href="/employer/jobs" 
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium"

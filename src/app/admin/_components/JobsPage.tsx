@@ -2,8 +2,7 @@
 import jobApiRequest from "@/app/apiRequest/job";
 import { useJobContext } from "@/app/context/JobContext";
 import React, { useState } from "react";
-import { Dialog, Transition } from '@headlessui/react';
-import { toast } from "react-toastify";
+import Alert from "@/components/Alert";
 import { MdWork, MdLocationOn, MdAttachMoney, MdCalendarToday, MdCardGiftcard } from "react-icons/md";
 import { 
   FaClipboardList, 
@@ -33,8 +32,12 @@ import {
   FaTimes,
   FaStar,
   FaUserCheck,
-  FaHome
+  FaHome,
+  FaTrash,
+  FaExternalLinkAlt
 } from "react-icons/fa";
+import { MessageUtils } from "@/utils/messageUtils";
+import { Job } from "@/app/context/JobContext";
 
 interface JobViolation {
   type: string;
@@ -73,9 +76,9 @@ const JOB_REQUIREMENTS: JobRequirement[] = [
   {
     id: 'description',
     label: 'Mô tả công việc',
-    description: 'Mô tả công việc phải chi tiết (ít nhất 100 ký tự)',
+    description: 'Mô tả công việc phải chi tiết (ít nhất 50 ký tự)',
     isRequired: true,
-    validate: (job) => job.description && job.description.length >= 100
+    validate: (job) => job.description && job.description.length >= 50
   },
   {
     id: 'requirements',
@@ -129,8 +132,11 @@ export default function JobPostsManagementPage() {
   const [filterStatus, setFilterStatus] = useState(3);
   const [filterTimeframe, setFilterTimeframe] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc");
-  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Giả lập kiểm tra vi phạm 
   const checkViolations = (job: any): JobViolation[] => {
@@ -185,7 +191,7 @@ export default function JobPostsManagementPage() {
     }
 
     // Kiểm tra mô tả công việc
-    if (!job.jobDescription || job.jobDescription.length < 100) {
+    if (!job.jobDescription || job.jobDescription.length < 50) {
       violations.push({
         type: 'Mô tả công việc',
         description: 'Mô tả công việc quá ngắn hoặc không có',
@@ -310,7 +316,6 @@ export default function JobPostsManagementPage() {
 
   const handleViewDetail = async (job: any) => {
     try {
-      // Lấy chi tiết job từ API
       const response = await jobApiRequest.getJobById(job.jobId);
       if (response.payload && response.payload.data) {
         console.log('Job details:', response.payload.data);
@@ -319,7 +324,7 @@ export default function JobPostsManagementPage() {
       }
     } catch (error) {
       console.error('Error fetching job details:', error);
-      toast.error('Không thể lấy thông tin chi tiết công việc');
+      Alert.error('Không thể lấy thông tin chi tiết công việc');
     }
   };
 
@@ -338,7 +343,7 @@ export default function JobPostsManagementPage() {
 
   const filteredJobPosts = allJobListContext
     ? allJobListContext
-        .filter((post) => {
+        .filter((post: Job) => {
           const matchesSearchTerm =
             post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             post.companyName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -382,7 +387,7 @@ export default function JobPostsManagementPage() {
 
           return matchesSearchTerm && matchesFilterStatus && matchesTimeframe();
         })
-        .sort((a, b) => {
+        .sort((a: Job, b: Job) => {
           const dateA = new Date(a.postingDate);
           const dateB = new Date(b.postingDate);
           return sortOrder === "asc"
@@ -391,18 +396,41 @@ export default function JobPostsManagementPage() {
         })
     : [];
 
-  const handleStatusChange = async (id: number, newStatus: number) => {
-    try {
-      await jobApiRequest.updateJobStatus(id, newStatus);
+  const handleStatusChange = async (jobId: number, newStatus: number) => {
+    const confirmMessages = {
+      "1": MessageUtils.getMessage("CONFIRM_JOB_APPROVE"),
+      "-1": MessageUtils.getMessage("CONFIRM_JOB_REJECT"),
+      "0": "Bạn có chắc chắn muốn đặt lại trạng thái chờ duyệt?"
+    };
 
-      if (allJobListContext && setAllJobList) {
-        const updatedJobPosts = allJobListContext.map((post) =>
-          post.jobId === id ? { ...post, status: newStatus } : post
-        );
-        setAllJobList(updatedJobPosts);
+    const successMessages = {
+      "1": MessageUtils.getMessage("SUCCESS_JOB_APPROVE"),
+      "-1": MessageUtils.getMessage("SUCCESS_JOB_REJECT"),
+      "0": "Đã đặt lại trạng thái chờ duyệt"
+    };
+
+    const errorMessages = {
+      "1": MessageUtils.getMessage("ERROR_JOB_APPROVE"),
+      "-1": MessageUtils.getMessage("ERROR_JOB_REJECT"),
+      "0": "Có lỗi xảy ra khi đặt lại trạng thái"
+    };
+
+    const statusKey = String(newStatus) as keyof typeof confirmMessages;
+    if (window.confirm(confirmMessages[statusKey])) {
+      try {
+        await jobApiRequest.updateJobStatus(jobId, newStatus);
+        Alert.success(successMessages[statusKey]);
+        // Cập nhật trực tiếp trong context
+        if (allJobListContext && setAllJobList) {
+          const updatedJobs = allJobListContext.map(job => 
+            job.jobId === jobId ? { ...job, status: newStatus } : job
+          );
+          setAllJobList(updatedJobs);
+        }
+      } catch (error) {
+        console.error(`Error updating job status to ${newStatus}:`, error);
+        Alert.error(errorMessages[statusKey]);
       }
-    } catch (error) {
-      console.error("Error updating job status:", error);
     }
   };
 
@@ -422,7 +450,7 @@ export default function JobPostsManagementPage() {
       }
     } catch (error) {
       console.error('Error fetching job details:', error);
-      toast.error('Không th lấy thông tin chi tiết công việc');
+      Alert.error('Không th lấy thông tin chi tiết công việc');
     }
   };
 
@@ -435,31 +463,86 @@ export default function JobPostsManagementPage() {
 
   // Thêm hàm xử lý cập nhật trạng thái từ modal
   const handleStatusChangeFromModal = async () => {
+    if (!selectedJob) return;
+    
     try {
-      const newStatus = selectedJob.status === 1 ? -1 : 1; // Chuyển đổi giữa Duyệt (1) và Từ chối (-1)
+      const newStatus = selectedJob.status === 1 ? -1 : 1;
       await jobApiRequest.updateJobStatus(selectedJob.jobId, newStatus);
-
-      // Cập nhật state của selectedJob
-      setSelectedJob({ ...selectedJob, status: newStatus });
-
-      // Cập nhật danh sách công việc trong context
-      if (allJobListContext && setAllJobList) {
-        const updatedJobPosts = allJobListContext.map((post) =>
-          post.jobId === selectedJob.jobId ? { ...post, status: newStatus } : post
-        );
-        setAllJobList(updatedJobPosts);
-      }
-
-      // Hiển thị thông báo thành công
-      toast.success(
-        newStatus === 1 
-          ? "Đã duyệt công việc thành công" 
-          : "Đã từ chối công việc thành công"
+      
+      // Update context state immediately
+      setAllJobList?.(prevJobs => 
+        prevJobs?.map(job => 
+          job.jobId === selectedJob.jobId 
+            ? { ...job, status: newStatus }
+            : job
+        ) || []
       );
+
+      Alert.success("Cập nhật trạng thái thành công");
     } catch (error) {
-      console.error("Error updating job status:", error);
-      toast.error("Không thể cập nhật trạng thái công việc");
+      Alert.error("Lỗi khi cập nhật trạng thái");
     }
+  };
+
+  const handleApproveJob = async (jobId: number) => {
+    if (window.confirm(MessageUtils.getMessage("CONFIRM_JOB_APPROVE"))) {
+      try {
+        await jobApiRequest.updateJobStatus(jobId, 1);
+        Alert.success(MessageUtils.getMessage("SUCCESS_JOB_APPROVE"));
+        if (allJobListContext && setAllJobList) {
+          const updatedJobs = allJobListContext.map(job => 
+            job.jobId === jobId ? { ...job, status: 1 } : job
+          );
+          setAllJobList(updatedJobs);
+        }
+      } catch (error) {
+        console.error("Error approving job:", error);
+        Alert.error(MessageUtils.getMessage("ERROR_JOB_APPROVE"));
+      }
+    }
+  };
+
+  const handleRejectJob = async (jobId: number) => {
+    if (window.confirm(MessageUtils.getMessage("CONFIRM_JOB_REJECT"))) {
+      try {
+        await jobApiRequest.updateJobStatus(jobId, -1);
+        Alert.success(MessageUtils.getMessage("SUCCESS_JOB_REJECT"));
+        if (allJobListContext && setAllJobList) {
+          const updatedJobs = allJobListContext.map(job => 
+            job.jobId === jobId ? { ...job, status: -1 } : job
+          );
+          setAllJobList(updatedJobs);
+        }
+      } catch (error) {
+        console.error("Error rejecting job:", error);
+        Alert.error(MessageUtils.getMessage("ERROR_JOB_REJECT"));
+      }
+    }
+  };
+
+  const fetchJobs = async () => {
+    try {
+      const response = await jobApiRequest.getAllJob();
+      if (Array.isArray(response.payload.data)) {
+        setJobs(response.payload.data);
+      } else {
+        setJobs([response.payload.data]);
+      }
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      Alert.error(MessageUtils.getMessage("ERROR_JOB_LOAD"));
+    }
+  };
+
+  // Tính toán số trang và danh sách công việc hiện tại
+  const totalPages = Math.ceil(filteredJobPosts.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredJobPosts.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Hàm chuyển trang
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
   };
 
   return (
@@ -511,19 +594,18 @@ export default function JobPostsManagementPage() {
         <div className="overflow-y-auto hide-scrollbar max-h-[calc(100vh-200px)]">
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
             <table className="min-w-full table-fixed">
-              <thead>
-                <tr className="bg-gradient-to-r from-blue-600 to-blue-400 text-white uppercase text-sm leading-normal">
-                  <th className="py-3 px-4 text-left w-1/3">Tên công việc</th>
-                  <th className="py-3 px-4 text-left w-1/4">Nhà tuyển dụng</th>
-                  <th className="py-3 px-4 text-left w-1/6 cursor-pointer" onClick={toggleSortOrder}>
-                    Ngày đăng {sortOrder === "asc" ? "↑" : "↓"}
-                  </th>
-                  <th className="py-3 px-4 text-left w-1/5">Trạng thái</th>
-                  <th className="py-3 px-4 text-left w-1/6">Thao tác</th>
+              <thead className="bg-blue-50">
+                <tr>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-blue-700">Tiêu đề</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-blue-700">Công ty</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-blue-700">Ngày đăng</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-blue-700">Trạng thái</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-blue-700">Thay đổi trạng thái</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-blue-700">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredJobPosts.map((post) => {
+                {currentItems.map((post) => {
                   const violations = checkViolations(post);
                   return (
                     <tr key={post.jobId} className="border-b hover:bg-blue-50 transition-colors">
@@ -560,36 +642,81 @@ export default function JobPostsManagementPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewDetail(post)}
-                            className="text-blue-600 hover:text-blue-800 transition-colors"
-                            title="Xem chi tiết"
-                          >
-                            <FaEye />
-                          </button>
-                          <select
-                            value={post.status === 2 ? 2 : post.status}
-                            onChange={(e) => {
-                              if (post.status !== 2) {
-                                handleStatusChange(post.jobId, Number(e.target.value));
+                        <select
+                          value={post.status === 2 ? 2 : post.status}
+                          onChange={(e) => {
+                            if (post.status !== 2) {
+                              const newStatus = Number(e.target.value);
+                              if (newStatus === 1) {
+                                handleApproveJob(post.jobId);
+                              } else if (newStatus === -1) {
+                                handleRejectJob(post.jobId);
+                              } else {
+                                handleStatusChange(post.jobId, newStatus);
                               }
-                            }}
-                            className="border border-gray-300 rounded-md p-2 text-sm"
-                            disabled={post.status === 2} // Chỉ disable khi job đã hết hạn
-                          >
-                            <option value={1}>Đã duyệt</option>
-                            <option value={0}>Đang chờ duyệt</option>
-                            <option value={-1}>Bị từ chối</option>
-                            {post.status === 2 && <option value={2}>Đã hết hạn</option>}
-                          </select>
-                        </div>
+                            }
+                          }}
+                          className="border border-gray-300 rounded-md p-2 text-sm"
+                          disabled={post.status === 2}
+                        >
+                          <option value={1}>Đã duyệt</option>
+                          <option value={0}>Đang chờ duyệt</option>
+                          <option value={-1}>Bị từ chối</option>
+                          {post.status === 2 && <option value={2}>Đã hết hạn</option>}
+                        </select>
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => handleViewDetail(post)}
+                          className="w-full bg-white border border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2"
+                        >
+                          Xem chi tiết
+                          <FaExternalLinkAlt className="w-3.5 h-3.5" />
+                        </button>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+            
+            {/* Phân trang */}
+            <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200">
+              <div className="flex items-center text-sm text-gray-700">
+                <span>
+                  Hiển thị {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredJobPosts.length)} trong {filteredJobPosts.length} kết quả
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 rounded border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Trước
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-1 rounded text-sm font-medium ${
+                      currentPage === page
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 rounded border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

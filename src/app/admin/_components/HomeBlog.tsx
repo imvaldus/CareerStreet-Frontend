@@ -160,11 +160,11 @@ export default function HomeBlog() {
       if (response.payload && Array.isArray(response.payload.data)) {
         setBlogs(response.payload.data);
       } else {
-        Alert.error("Lỗi", "Dữ liệu blog không hợp lệ");
+        Alert.error("ERROR_BLOG_DATA_INVALID");
       }
     } catch (error) {
       console.error("Error fetching blogs:", error);
-      Alert.error("Lỗi", "Không thể tải danh sách blog");
+      Alert.error("ERROR_BLOG_LOAD");
     } finally {
       setIsLoading(false);
     }
@@ -181,10 +181,10 @@ export default function HomeBlog() {
     try {
       await blogApiRequest.deleteBlog(blogToDelete);
       setBlogs(blogs.filter(blog => blog.blogId !== blogToDelete));
-      Alert.success("Thành công", "Đã xóa blog");
+      Alert.success("SUCCESS_BLOG_DELETE");
       setShowDeleteModal(false);
     } catch (error) {
-      Alert.error("Lỗi", "Không thể xóa blog");
+      Alert.error("ERROR_BLOG_DELETE");
     }
     setBlogToDelete(null);
   };
