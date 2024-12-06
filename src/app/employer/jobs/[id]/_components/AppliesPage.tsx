@@ -3,7 +3,7 @@ import { getStatusLabel } from "@/app/schemaValidations/apply.schema";
 import applyApiRequest from "@/app/apiRequest/apply";
 import { useApplyContext, Apply } from "@/app/context/ApplyContext";
 import { useState, useEffect } from "react";
-import { FaEye, FaFileAlt, FaEnvelope, FaCalendarAlt, FaUserCircle, FaTimes, FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaClock, FaSearch, FaCheckDouble, FaUserClock, FaChevronDown, FaCircle, FaCheck, FaMapMarkerAlt, FaBriefcase, FaMoneyBillWave, FaBuilding, FaPhone, FaAddressCard, FaUser, FaClipboardList, FaUsers, FaHistory } from "react-icons/fa";
+import { FaEye, FaFileAlt, FaEnvelope, FaCalendarAlt, FaUserCircle, FaTimes, FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaClock, FaSearch, FaCheckDouble, FaUserClock, FaChevronDown, FaCircle, FaCheck, FaMapMarkerAlt, FaBriefcase, FaMoneyBillWave, FaBuilding, FaPhone, FaAddressCard, FaUser, FaClipboardList, FaUsers, FaHistory, FaSync } from "react-icons/fa";
 import Alert from "@/components/Alert";
 import cvApiRequest from "@/app/apiRequest/cv";
 import jobApiRequest from "@/app/apiRequest/job";
@@ -17,7 +17,7 @@ interface StatusHistory {
 
 const StatusProgressBar = ({ currentStatus, statusHistory }: { currentStatus: number, statusHistory?: StatusHistory[] }) => {
   const steps = [
-    { status: 0, label: 'Chờ xét duyệt', icon: FaClock, description: 'Đơn ứng tuyển đang chờ được xem xét' },
+    { status: 0, label: 'Chờ xét duyệt', icon: FaClock, description: 'ơn ứng tuyển đang chờ được xem xét' },
     { status: 1, label: 'Đang xem xét', icon: FaSearch, description: 'Nhà tuyển dụng đang xem xét hồ sơ' },
     { status: 2, label: 'Chờ phỏng vấn', icon: FaCalendarAlt, description: 'Ứng viên được mời phỏng vấn' },
     { status: 3, label: 'Phỏng vấn xong', icon: FaCheckCircle, description: 'Đã hoàn thành phỏng vấn' },
@@ -161,34 +161,40 @@ const StatusProgressBar = ({ currentStatus, statusHistory }: { currentStatus: nu
   );
 };
 
-export default function AppliesPage() {
-  const { appliesListByEmployerId, setAppliesListByEmployerId } = useApplyContext();
+interface AppliesPageProps {
+  applyList: Apply[];
+  isLoading: boolean;
+  onRefresh: () => void;
+}
+
+const validateStatusTransition = (currentStatus: number, newStatus: number): { valid: boolean; message?: string } => {
+  // Không thể thay đổi nếu đã từ chối hoặc đã tuyển dụng
+  if (currentStatus === -1 || currentStatus === 5) {
+    return { valid: false, message: "Không thể thay đổi trạng thái của đơn đã kết thúc" };
+  }
+
+  // Chỉ có thể chuyển sang trạng thái kế tiếp
+  if (newStatus > currentStatus + 1 && newStatus !== -1) {
+    return { valid: false, message: "Không thể bỏ qua các bước trong quy trình" };
+  }
+
+  // Không thể quay lại trạng thái trước (trừ khi từ chối)
+  if (newStatus < currentStatus && newStatus !== -1) {
+    return { valid: false, message: "Không thể quay lại trạng thái trước" };
+  }
+
+  return { valid: true };
+};
+
+export default function AppliesPage({ applyList, isLoading, onRefresh }: AppliesPageProps) {
+  const { setAppliesListByEmployerId } = useApplyContext();
   const [selectedApplication, setSelectedApplication] = useState<Apply | null>(null);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [isJobDetailModalOpen, setIsJobDetailModalOpen] = useState(false);
 
-  const validateStatusTransition = (currentStatus: number, newStatus: number): { valid: boolean; message?: string } => {
-    // Không thể thay đổi nếu đã từ chối hoặc đã tuyển dụng
-    if (currentStatus === -1 || currentStatus === 5) {
-      return { valid: false, message: "Không thể thay đổi trạng thái của đơn đã kết thúc" };
-    }
-
-    // Chỉ có thể chuyển sang trạng thái kế tiếp
-    if (newStatus > currentStatus + 1 && newStatus !== -1) {
-      return { valid: false, message: "Không thể bỏ qua các bước trong quy trình" };
-    }
-
-    // Không thể quay lại trạng thái trước (trừ khi từ chối)
-    if (newStatus < currentStatus && newStatus !== -1) {
-      return { valid: false, message: "Không thể quay lại trạng thái trước" };
-    }
-
-    return { valid: true };
-  };
-
   const handleStatusChange = async (applicationId: number, newStatus: number) => {
     try {
-      const currentApplication = appliesListByEmployerId?.find(apply => apply.applyId === applicationId);
+      const currentApplication = applyList?.find(apply => apply.applyId === applicationId);
       if (!currentApplication) return;
 
       const validation = validateStatusTransition(currentApplication.status, newStatus);
@@ -197,7 +203,7 @@ export default function AppliesPage() {
         return;
       }
 
-      // Cập nhật UI ngay lập tức
+      // Cập nhật UI ngay lập tức thông qua context
       setAppliesListByEmployerId(prevApplies => 
         prevApplies?.map(apply => 
           apply.applyId === applicationId 
@@ -220,7 +226,7 @@ export default function AppliesPage() {
 
       // Gọi API
       await applyApiRequest.updateApplyStatus(applicationId, newStatus);
-
+      
       // Hiển thị thông báo thành công
       let successMessage = "";
       switch (newStatus) {
@@ -236,7 +242,7 @@ export default function AppliesPage() {
 
     } catch (error) {
       // Khôi phục trạng thái cũ nếu có lỗi
-      const originalStatus = appliesListByEmployerId?.find(apply => apply.applyId === applicationId)?.status || 0;
+      const originalStatus = applyList?.find(apply => apply.applyId === applicationId)?.status || 0;
       
       setAppliesListByEmployerId(prevApplies => 
         prevApplies?.map(apply => 
@@ -322,46 +328,6 @@ export default function AppliesPage() {
       Alert.error('Không thể lấy thông tin chi tiết đơn ứng tuyển');
     }
   };
-
-  // Thêm useEffect để load thông tin chi tiết khi component mount
-  useEffect(() => {
-    const loadApplicationDetails = async () => {
-      if (!appliesListByEmployerId) return;
-      
-      try {
-        const sessionToken = localStorage.getItem('token') || '';
-        
-        // Load thông tin chi tiết cho mỗi đơn ứng tuyển
-        const updatedApplications = await Promise.all(
-          appliesListByEmployerId.map(async (application) => {
-            if (application.candidateName && application.jobTitle) {
-              return application;
-            }
-
-            const [cvResponse, jobResponse] = await Promise.all([
-              cvApiRequest.getCvById(application.candidateCvId, sessionToken),
-              jobApiRequest.getJobById(application.jobId)
-            ]);
-
-            return {
-              ...application,
-              candidateName: cvResponse.payload.data.fullName,
-              email: cvResponse.payload.data.email,
-              phone: cvResponse.payload.data.phone,
-              jobTitle: jobResponse.payload.data.title
-            };
-          })
-        );
-
-        setAppliesListByEmployerId(updatedApplications);
-      } catch (error) {
-        console.error('Error loading application details:', error);
-        Alert.error('Không thể tải thông tin chi tiết đơn ứng tuyển');
-      }
-    };
-
-    loadApplicationDetails();
-  }, [appliesListByEmployerId?.length]);
 
   const handleViewCV = async (cvId: number) => {
     try {
@@ -452,105 +418,121 @@ ${companyName}
   return (
     <div className="bg-gray-50 min-h-screen p-6">
       <div className="bg-gradient-to-r from-blue-600 to-blue-400 shadow-lg rounded-lg p-6 mb-8 text-white">
-        <h1 className="text-3xl font-bold">Quản lý đơn ứng tuyển</h1>
-        <p className="mt-2 text-blue-100">Theo dõi và xử lý các đơn ứng tuyển từ ứng viên</p>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ứng viên
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày ứng tuyển
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Vị trí
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {appliesListByEmployerId?.map((application) => (
-                <tr key={application.applyId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <FaUserCircle className="h-10 w-10 text-gray-400" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {application.candidateName || 'Ứng viên #' + application.applyId}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {application.email}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {new Date(application.date).toLocaleDateString('vi-VN')}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {application.jobTitle}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="relative">
-                      <select
-                        value={application.status}
-                        onChange={(e) => handleStatusChange(application.applyId, Number(e.target.value))}
-                        className={`appearance-none w-full pl-10 pr-8 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ease-in-out
-                          ${getStatusColor(application.status)} 
-                          ${application.status === -1 || application.status === 5 
-                            ? 'opacity-80 cursor-not-allowed' 
-                            : 'cursor-pointer focus:ring-2 focus:ring-offset-2'}`}
-                        disabled={application.status === -1 || application.status === 5}
-                      >
-                        {getAvailableStatuses(application.status).map((status) => (
-                          <option 
-                            key={status.value} 
-                            value={status.value}
-                            className="text-gray-900 bg-white"
-                          >
-                            {status.label}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                        {getStatusIcon(application.status)}
-                      </div>
-                      <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
-                        <FaChevronDown className={`w-4 h-4 ${application.status === -1 || application.status === 5 ? 'text-gray-400' : 'text-gray-700'}`} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleViewDetail(application)}
-                      className="text-blue-600 hover:text-blue-900 flex items-center"
-                    >
-                      <FaEye className="mr-2" />
-                      Xem chi tiết
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Quản lý đơn ứng tuyển</h1>
+            <p className="mt-2 text-blue-100">Theo dõi và xử lý các đơn ứng tuyển từ ứng viên</p>
+          </div>
+          <button 
+            onClick={onRefresh}
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+          >
+            <FaSync className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ứng viên
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ngày ứng tuyển
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Vị trí
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Trạng thái
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {applyList?.map((application) => (
+                  <tr key={application.applyId} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <FaUserCircle className="h-10 w-10 text-gray-400" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {application.candidateName || 'Ứng viên #' + application.applyId}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {application.email}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {new Date(application.date).toLocaleDateString('vi-VN')}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {application.jobTitle}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="relative">
+                        <select
+                          value={application.status}
+                          onChange={(e) => handleStatusChange(application.applyId, Number(e.target.value))}
+                          className={`appearance-none w-full pl-10 pr-8 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ease-in-out
+                            ${getStatusColor(application.status)} 
+                            ${application.status === -1 || application.status === 5 
+                              ? 'opacity-80 cursor-not-allowed' 
+                              : 'cursor-pointer focus:ring-2 focus:ring-offset-2'}`}
+                          disabled={application.status === -1 || application.status === 5}
+                        >
+                          {getAvailableStatuses(application.status).map((status) => (
+                            <option 
+                              key={status.value} 
+                              value={status.value}
+                              className="text-gray-900 bg-white"
+                            >
+                              {status.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                          {getStatusIcon(application.status)}
+                        </div>
+                        <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                          <FaChevronDown className={`w-4 h-4 ${application.status === -1 || application.status === 5 ? 'text-gray-400' : 'text-gray-700'}`} />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handleViewDetail(application)}
+                        className="text-blue-600 hover:text-blue-900 flex items-center"
+                      >
+                        <FaEye className="mr-2" />
+                        Xem chi tiết
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {selectedApplication && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">

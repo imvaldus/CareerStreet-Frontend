@@ -1,59 +1,79 @@
 "use client";
-
-import { ApplyListResType } from "@/app/schemaValidations/apply.schema";
 import AppliesPage from "../_components/AppliesPage";
-import {useEffect, useState } from "react";
+import { useApplyContext, Apply } from "@/app/context/ApplyContext";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import applyApiRequest from "@/app/apiRequest/apply";
-import { useParams } from "next/navigation"; // Import useParams
-// import { useDataContext } from "@/app/context/userContext";
+import cvApiRequest from "@/app/apiRequest/cv";
+import jobApiRequest from "@/app/apiRequest/job";
 
-export default function Applies() {
-  const [applyList, setApplyList] = useState<ApplyListResType["data"] | null>(
-    null
-  ); // Danh sách Level
-  const { id } = useParams(); // Lấy id từ URL
+export default function Page() {
+  const { appliesListByEmployerId, setAppliesListByEmployerId } = useApplyContext();
+  const [filteredApplies, setFilteredApplies] = useState<Apply[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const params = useParams();
+  const jobId = params.id;
 
-  // const { setApplyListLength } = useDataContext(); // Lấy hàm setApplyListLength từ context
+  const loadApplicationDetails = async () => {
+    if (!jobId) return;
+    
+    try {
+      setIsLoading(true);
+      const sessionToken = localStorage.getItem('token') || '';
+      
+      // Fetch applies for specific job
+      const applyResult = await applyApiRequest.getAppliesByJobId(parseInt(jobId as string));
+      const applies = Array.isArray(applyResult.payload.data) 
+        ? applyResult.payload.data 
+        : [applyResult.payload.data];
+
+      // Load details for each application
+      const detailedApplies = await Promise.all(
+        applies.map(async (apply: Apply) => {
+          const [cvResponse, jobResponse] = await Promise.all([
+            cvApiRequest.getCvById(apply.candidateCvId, sessionToken),
+            jobApiRequest.getJobById(apply.jobId)
+          ]);
+
+          return {
+            ...apply,
+            candidateName: cvResponse.payload.data.fullName,
+            email: cvResponse.payload.data.email,
+            phone: cvResponse.payload.data.phone,
+            jobTitle: jobResponse.payload.data.title
+          };
+        })
+      );
+
+      setFilteredApplies(detailedApplies);
+      setAppliesListByEmployerId(prev => {
+        const updated = [...(prev || [])];
+        detailedApplies.forEach(detailed => {
+          const index = updated.findIndex(a => a.applyId === detailed.applyId);
+          if (index >= 0) {
+            updated[index] = detailed;
+          } else {
+            updated.push(detailed);
+          }
+        });
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error loading applications:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Kiểm tra nếu id là chuỗi
-        if (typeof id === "string") {
-          const jobId = parseInt(id); // Chuyển đổi id sang number
-          
-          if (!isNaN(jobId)) {
-            const applyResult = await applyApiRequest.getAppliesByJobId(jobId); // Gọi API với jobId là số
-            console.log("API result: ", applyResult); 
-
-            // Kiểm tra nếu `data` là một mảng
-            if (Array.isArray(applyResult.payload.data)) {
-              setApplyList(applyResult.payload.data); // Gán khi đúng là mảng
-              // setApplyListLength(applyResult.payload.data.length); // Lưu độ dài của applyList vào context
-            } else if (applyResult.payload.data) {
-              setApplyList([applyResult.payload.data]); // Nếu là object, chuyển thành mảng
-              // setApplyListLength(1); // Nếu chỉ có một đối tượng, độ dài là 1
-            }
-          } else {
-            console.error("Invalid job id: ", id);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchData(); // Gọi hàm fetchData khi component được mount
-  }, [id]);
-
-  if (applyList) {
-    console.log(applyList.length + " size");
-  }
+    loadApplicationDetails();
+  }, [jobId]);
 
   return (
-    <>
-      <AppliesPage 
-      applyList ={applyList}/>
-    </>
+    <AppliesPage 
+      applyList={filteredApplies}
+      isLoading={isLoading}
+      onRefresh={loadApplicationDetails}
+    />
   );
 }
