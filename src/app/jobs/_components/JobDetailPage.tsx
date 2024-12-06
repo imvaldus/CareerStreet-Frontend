@@ -129,13 +129,13 @@ export default function JobsPage({
 
   return (
     <>
-      <div className="flex flex-wrap max-w-6xl mx-auto">
+      <div className="flex flex-wrap max-w-6xl mx-auto p-4">
         {/* Cột 1: Job Post */}
-        <div className="job-post bg-white shadow-xl shadow-gray-200 w-full md:w-8/12 mr-4">
+        <div className="job-post mb-4 bg-white shadow-xl shadow-gray-200 w-full md:w-8/12 mr-4">
           {" "}
           {/* Thêm margin-right cho cột 1 */}
           {/* Banner Image */}
-          <div className="banner mb-4 w-full">
+          <div className="banner m-8 w-full rounded-lg">
             <img
               src="/images/logo.png" // Thay thế URL này bằng URL của hình ảnh banner bạn muốn
               alt="Banner"
@@ -143,8 +143,8 @@ export default function JobsPage({
             />
           </div>
           {/* New Job Post: IT Security Manager */}
-          <div className="job-meta mb-8 text-xs">
-            <h1 className="job-title mb-4 text-3xl font-bold text-gray-900 dark:text-white">
+          <div className="job-meta mb-8 text-xs p-4">
+            <h1 className="job-title mb-4 text-4xl font-bold text-gray-900 dark:text-white">
               {job?.title}
             </h1>
 
@@ -174,7 +174,7 @@ export default function JobsPage({
               <span>Số lượng tuyển: <span className="font-medium">{job?.numberOfRecruitment} Người</span></span>
             </div>
           </div>
-          <div className="flex items-center space-x-2 mb-4">
+          <div className="flex items-center space-x-2 m-4">
             <a
               href="#"
               className={`flex items-center justify-center rounded-lg border-2 ${isApplied
@@ -196,27 +196,27 @@ export default function JobsPage({
             </button>
 
           </div>
-          <div className="job-description mb-4">
+          <div className="job-description m-4">
             <h3 className="text-xl font-semibold text-purple-800 mb-4">
               Mô tả công việc
             </h3>
-            <ul className="list-disc ml-6 mb-2">{job?.jobDescription}</ul>
+            <ul className="list-disc ml-6 m-2">{job?.jobDescription}</ul>
           </div>
-          <div className="job-skills mb-4">
+          <div className="job-skills m-4">
             <h3 className="text-xl font-semibold text-purple-800 mb-4">
               Kỹ năng yêu cầu
             </h3>
-            <ul className="list-disc ml-6 mb-2">{job?.jobRequirements}</ul>
+            <ul className="list-disc ml-6 m-2">{job?.jobRequirements}</ul>
             <ul className="list-disc ml-6">
-              <li className="list-disc ml-6 mb-2">
+              <li className="list-disc ml-6 m-2">
                 Trình độ học vấn: {job?.educationLevel}
               </li>
 
-              <li className="list-disc ml-6 mb-2">
+              <li className="list-disc ml-6 m-2">
                 Công nghệ: {tech?.map((t) => t.name).join(", ")}
               </li>
 
-              <li className="list-disc ml-6 mb-2">
+              <li className="list-disc ml-6 m-2">
                 Kinh nghiệm: {job?.levelName}
               </li>
               <li className="list-disc ml-6 mb-2">Cấp bậc: {job?.jobRank}</li>
@@ -224,12 +224,12 @@ export default function JobsPage({
             </ul>
           </div>
           <div className="job-benefits mb-4">
-            <h3 className="text-xl font-semibold text-purple-800 mb-4">
+            <h3 className="text-xl font-semibold text-purple-800 m-4">
               Quyền lợi
             </h3>
             <ul className="list-disc ml-6 mb-2">{job?.benefits}</ul>
           </div>
-          <div className="job-contact mb-4">
+          <div className="job-contact m-4">
             <h3 className="text-xl font-semibold text-purple-800 mb-4">
               Thông tin liên hệ
             </h3>
@@ -246,7 +246,7 @@ export default function JobsPage({
               Địa chỉ liên hệ: {job?.contactAddress}
             </p>
           </div>
-          <div className="job-contact mb-4">
+          <div className="job-contact m-4">
             <h3 className="text-xl font-semibold text-purple-800 mb-4">
               Thông tin công ty
             </h3>
