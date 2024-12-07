@@ -17,7 +17,7 @@ interface StatusHistory {
 
 const StatusProgressBar = ({ currentStatus, statusHistory }: { currentStatus: number, statusHistory?: StatusHistory[] }) => {
   const steps = [
-    { status: 0, label: 'Chờ xét duyệt', icon: FaClock, description: 'ơn ứng tuyển đang chờ được xem xét' },
+    { status: 0, label: 'Chờ xét duyệt', icon: FaClock, description: 'Đơn ứng tuyển đang chờ được xem xét' },
     { status: 1, label: 'Đang xem xét', icon: FaSearch, description: 'Nhà tuyển dụng đang xem xét hồ sơ' },
     { status: 2, label: 'Chờ phỏng vấn', icon: FaCalendarAlt, description: 'Ứng viên được mời phỏng vấn' },
     { status: 3, label: 'Phỏng vấn xong', icon: FaCheckCircle, description: 'Đã hoàn thành phỏng vấn' },
