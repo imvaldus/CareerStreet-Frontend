@@ -421,7 +421,7 @@ Cảm ơn bạn đã quan tâm và gửi hồ sơ ứng tuyển vị trí ${appl
 
 Chúng tôi đã nhận được CV của bạn và sẽ xem xét kỹ lưỡng. Nếu hồ sơ của bạn phù hợp với vị trí này, chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất để trao đổi thêm.
 
-Một lần nữa cảm ơn sự quan tâm c��a bạn đến cơ hội nghề nghiệp tại ${companyName}.
+Một lần nữa cảm ơn sự quan tâm của bạn đến cơ hội nghề nghiệp tại ${companyName}.
 
 Trân trọng,
 Phòng Nhân sự
