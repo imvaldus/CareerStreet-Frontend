@@ -1,32 +1,62 @@
-"use client"
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
 import applyApiRequest from "@/app/apiRequest/apply";
-
-export interface Apply {
-  applyId: number;
-  status: number;
-  candidateCvId: number;
-  jobId: number;
-  coverLetter: string;
-  date: string;
-  [key: string]: any;
-}
+import { ApplyListResType } from "@/app/schemaValidations/apply.schema";
 
 type ApplyContextType = {
-  appliesListByEmployerId: Apply[] | null;
-  setAppliesListByEmployerId: React.Dispatch<React.SetStateAction<Apply[] | null>>;
+  appliesListByCandidateId: ApplyListResType["data"] | null;
+  setAppliesListByCandidateId: React.Dispatch<
+    React.SetStateAction<ApplyListResType["data"] | null>
+  > | null;
+  appliesListByEmployerId: ApplyListResType["data"] | null;
+  setAppliesListByEmployerId: React.Dispatch<
+    React.SetStateAction<ApplyListResType["data"] | null>
+  > | null;
+  checkApplicationStatus: (jobId: number) => Promise<boolean>; // Thêm hàm kiểm tra
 };
 
-const defaultContext: ApplyContextType = {
+const ApplyContext = createContext<ApplyContextType>({
+  appliesListByCandidateId: null,
+  setAppliesListByCandidateId: null,
   appliesListByEmployerId: null,
-  setAppliesListByEmployerId: () => null,
-};
+  setAppliesListByEmployerId: null,
+  checkApplicationStatus: async () => false, // Default cho context
+});
 
-const ApplyContext = createContext<ApplyContextType>(defaultContext);
+export const ApplyProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [appliesListByCandidateId, setAppliesListByCandidateId] = useState<
+    ApplyListResType["data"] | null
+  >(null);
+  const [appliesListByEmployerId, setAppliesListByEmployerId] = useState<
+    ApplyListResType["data"] | null
+  >(null);
 
-export const ApplyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [appliesListByEmployerId, setAppliesListByEmployerId] = useState<Apply[] | null>(null);
+  useEffect(() => {
+    const fetchAppliesByCandidate = async () => {
+      const cookies = document.cookie;
+      const userIdMatch = cookies.match(/userId=([^;]+)/);
+      const userId = userIdMatch ? parseInt(userIdMatch[1], 10) : null;
+
+      if (userId !== null) {
+        try {
+          const appliesResult = await applyApiRequest.getAppliesByCandidateId(
+            userId
+          );
+
+          if (Array.isArray(appliesResult.payload.data)) {
+            setAppliesListByCandidateId(appliesResult.payload.data);
+          } else {
+            setAppliesListByCandidateId([appliesResult.payload.data]);
+          }
+        } catch (error) {
+          console.error("An error occurred while fetching Applies by Candidate:", error);
+        }
+      }
+    };
+
+    fetchAppliesByCandidate();
+  }, []);
 
   useEffect(() => {
     const fetchAppliesByEmployer = async () => {
@@ -36,18 +66,17 @@ export const ApplyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (employerId !== null) {
         try {
-          const appliesResult = await applyApiRequest.getAppliesByEmployerId(employerId);
+          const appliesResult = await applyApiRequest.getAppliesByEmployerId(
+            employerId
+          );
 
           if (Array.isArray(appliesResult.payload.data)) {
             setAppliesListByEmployerId(appliesResult.payload.data);
-          } else if (appliesResult.payload.data) {
-            setAppliesListByEmployerId([appliesResult.payload.data]);
           } else {
-            setAppliesListByEmployerId([]);
+            setAppliesListByEmployerId([appliesResult.payload.data]);
           }
         } catch (error) {
-          console.error("Error fetching applies by employer:", error);
-          setAppliesListByEmployerId([]);
+          console.error("An error occurred while fetching Applies by Employer:", error);
         }
       }
     };
@@ -55,8 +84,32 @@ export const ApplyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     fetchAppliesByEmployer();
   }, []);
 
+  const checkApplicationStatus = async (jobId: number): Promise<boolean> => {
+    const cookies = document.cookie;
+    const userIdMatch = cookies.match(/userId=([^;]+)/);
+    const userId = userIdMatch ? parseInt(userIdMatch[1], 10) : null;
+
+    if (userId !== null) {
+      try {
+        const result = await applyApiRequest.checkApplicationStatus(userId, jobId);
+        return result.payload === true;
+      } catch (error) {
+        console.error("Error while checking application status:", error);
+      }
+    }
+    return false;
+  };
+
   return (
-    <ApplyContext.Provider value={{ appliesListByEmployerId, setAppliesListByEmployerId }}>
+    <ApplyContext.Provider
+      value={{
+        appliesListByCandidateId,
+        setAppliesListByCandidateId,
+        appliesListByEmployerId,
+        setAppliesListByEmployerId,
+        checkApplicationStatus,
+      }}
+    >
       {children}
     </ApplyContext.Provider>
   );
