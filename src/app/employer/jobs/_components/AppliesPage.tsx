@@ -1,7 +1,7 @@
 "use client";
-import { getStatusLabel } from "@/app/schemaValidations/apply.schema";
+import { getStatusLabel, ApplyListResType } from "@/app/schemaValidations/apply.schema";
 import applyApiRequest from "@/app/apiRequest/apply";
-import { useApplyContext, Apply } from "@/app/context/ApplyContext";
+import { useApplyContext } from "@/app/context/ApplyContext";
 import { useState, useEffect } from "react";
 import { FaEye, FaFileAlt, FaEnvelope, FaCalendarAlt, FaUserCircle, FaTimes, FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaClock, FaSearch, FaCheckDouble, FaUserClock, FaChevronDown, FaCircle, FaCheck, FaMapMarkerAlt, FaBriefcase, FaMoneyBillWave, FaBuilding, FaPhone, FaAddressCard, FaUser, FaClipboardList, FaUsers, FaHistory } from "react-icons/fa";
 import Alert from "@/components/Alert";
@@ -9,12 +9,19 @@ import cvApiRequest from "@/app/apiRequest/cv";
 import jobApiRequest from "@/app/apiRequest/job";
 import { MdLocationOn } from "react-icons/md";
 import { MdCardGiftcard, MdWork } from "react-icons/md";
-import { ApplyListResType } from "@/app/schemaValidations/apply.schema";
 
 interface StatusHistory {
   status: number;
   date: string;
 }
+
+type ExtendedApplyType = ApplyListResType["data"][number] & {
+  candidateName?: string;
+  email?: string;
+  phone?: string;
+  jobTitle?: string;
+  statusHistory?: StatusHistory[];
+};
 
 interface AppliesPageProps {
   applyList: ApplyListResType["data"] | null;
@@ -168,7 +175,7 @@ const StatusProgressBar = ({ currentStatus, statusHistory }: { currentStatus: nu
 
 export default function AppliesPage({ applyList }: AppliesPageProps) {
   const { appliesListByEmployerId, setAppliesListByEmployerId } = useApplyContext();
-  const [selectedApplication, setSelectedApplication] = useState<Apply | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<ExtendedApplyType | null>(null);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [isJobDetailModalOpen, setIsJobDetailModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -352,8 +359,9 @@ export default function AppliesPage({ applyList }: AppliesPageProps) {
         // Load thông tin chi tiết cho mỗi đơn ứng tuyển
         const updatedApplications = await Promise.all(
           appliesListByEmployerId.map(async (application) => {
-            if (application.candidateName && application.jobTitle) {
-              return application;
+            const extendedApp = application as ExtendedApplyType;
+            if (extendedApp.candidateName && extendedApp.jobTitle) {
+              return extendedApp;
             }
 
             const [cvResponse, jobResponse] = await Promise.all([
@@ -408,7 +416,7 @@ export default function AppliesPage({ applyList }: AppliesPageProps) {
     }
   };
 
-  const handleSendEmail = (application: Apply) => {
+  const handleSendEmail = (application: ExtendedApplyType) => {
     const cookies = document.cookie;
     const companyNameMatch = cookies.match(/companyName=([^;]+)/);
     const companyName = companyNameMatch ? decodeURIComponent(companyNameMatch[1]) : 'Công ty';
@@ -428,7 +436,7 @@ Phòng Nhân sự
 ${companyName}
     `.trim();
 
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(application.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(application.email || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(gmailUrl, '_blank');
   };
 
@@ -497,74 +505,77 @@ ${companyName}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentItems.map((application) => (
-                <tr key={application.applyId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <FaUserCircle className="h-10 w-10 text-gray-400" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {application.candidateName || 'Ứng viên #' + application.applyId}
+              {currentItems.map((application) => {
+                const extendedApp = application as ExtendedApplyType;
+                return (
+                  <tr key={extendedApp.applyId} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <FaUserCircle className="h-10 w-10 text-gray-400" />
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {application.email}
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {extendedApp.candidateName || 'Ứng viên #' + extendedApp.applyId}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {extendedApp.email}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {new Date(application.date).toLocaleDateString('vi-VN')}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {application.jobTitle}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="relative">
-                      <select
-                        value={application.status}
-                        onChange={(e) => handleStatusChange(application.applyId, Number(e.target.value))}
-                        className={`appearance-none w-full pl-10 pr-8 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ease-in-out
-                          ${getStatusColor(application.status)} 
-                          ${application.status === -1 || application.status === 5 
-                            ? 'opacity-80 cursor-not-allowed' 
-                            : 'cursor-pointer focus:ring-2 focus:ring-offset-2'}`}
-                        disabled={application.status === -1 || application.status === 5}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {new Date(extendedApp.date).toLocaleDateString('vi-VN')}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {extendedApp.jobTitle}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="relative">
+                        <select
+                          value={extendedApp.status}
+                          onChange={(e) => handleStatusChange(extendedApp.applyId, Number(e.target.value))}
+                          className={`appearance-none w-full pl-10 pr-8 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ease-in-out
+                            ${getStatusColor(extendedApp.status)} 
+                            ${extendedApp.status === -1 || extendedApp.status === 5 
+                              ? 'opacity-80 cursor-not-allowed' 
+                              : 'cursor-pointer focus:ring-2 focus:ring-offset-2'}`}
+                          disabled={extendedApp.status === -1 || extendedApp.status === 5}
+                        >
+                          {getAvailableStatuses(extendedApp.status).map((status) => (
+                            <option 
+                              key={status.value} 
+                              value={status.value}
+                              className="text-gray-900 bg-white"
+                            >
+                              {status.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                          {getStatusIcon(extendedApp.status)}
+                        </div>
+                        <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                          <FaChevronDown className={`w-4 h-4 ${extendedApp.status === -1 || extendedApp.status === 5 ? 'text-gray-400' : 'text-gray-700'}`} />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handleViewDetail(extendedApp)}
+                        className="text-blue-600 hover:text-blue-900 flex items-center"
                       >
-                        {getAvailableStatuses(application.status).map((status) => (
-                          <option 
-                            key={status.value} 
-                            value={status.value}
-                            className="text-gray-900 bg-white"
-                          >
-                            {status.label}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                        {getStatusIcon(application.status)}
-                      </div>
-                      <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
-                        <FaChevronDown className={`w-4 h-4 ${application.status === -1 || application.status === 5 ? 'text-gray-400' : 'text-gray-700'}`} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleViewDetail(application)}
-                      className="text-blue-600 hover:text-blue-900 flex items-center"
-                    >
-                      <FaEye className="mr-2" />
-                      Xem chi tiết
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                        <FaEye className="mr-2" />
+                        Xem chi tiết
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
