@@ -17,32 +17,32 @@ import { useApplyContext } from "@/app/context/ApplyContext";
 import ApiRequestSave from "@/app/apiRequest/save";
 import { toast } from "react-toastify";
 
-const calculateDaysLeft = (
-  postingDate?: string | Date,
-  expirationDate?: string | Date
-): number => {
-  // Kiểm tra nếu một trong hai ngày là undefined
-  if (!postingDate || !expirationDate) {
-    return 0; // Hoặc giá trị nào bạn muốn khi không có đủ ngày
+const calculateDaysLeft = (expirationDate?: string | Date): number => {
+  // Kiểm tra nếu expirationDate là undefined
+  if (!expirationDate) {
+    return 0; // Hoặc giá trị mặc định bạn muốn
   }
 
-  // Chuyển đổi về đối tượng Date
-  const startDate = new Date(postingDate);
+  // Ngày hiện tại
+  const currentDate = new Date();
+
+  // Chuyển expirationDate về đối tượng Date
   const endDate = new Date(expirationDate);
 
-  // Kiểm tra xem các ngày có hợp lệ không
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+  // Kiểm tra xem ngày có hợp lệ không
+  if (isNaN(endDate.getTime())) {
     throw new Error("Invalid date format");
   }
 
-  // Tính số milliseconds giữa hai ngày
-  const timeDiff = endDate.getTime() - startDate.getTime();
+  // Tính số milliseconds giữa ngày hết hạn và ngày hiện tại
+  const timeDiff = endDate.getTime() - currentDate.getTime();
 
   // Chuyển milliseconds thành ngày
   const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
   return daysLeft;
 };
+
 
 export default function JobsPage({
   job,
@@ -108,7 +108,9 @@ export default function JobsPage({
     setIsModalOpen(false); // Đóng modal
   };
 
-  const daysLeft = calculateDaysLeft(job?.postingDate, job?.expirationDate);
+  const daysLeft = calculateDaysLeft(job?.expirationDate);
+  console.log("Time from now to " + job?.expirationDate + " : " + daysLeft);
+
 
   const { checkApplicationStatus } = useApplyContext(); // Lấy hàm kiểm tra trạng thái ứng tuyển từ context
   const [isApplied, setIsApplied] = useState(false); // Lưu trạng thái ứng tuyển
