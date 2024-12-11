@@ -5,8 +5,6 @@ SUCCESS_JOB_UPDATE,Cập nhật tin tuyển dụng thành công,Job updated succ
 SUCCESS_JOB_DELETE,Xóa tin tuyển dụng thành công,Job deleted successfully,success
 SUCCESS_JOB_APPROVE,Đã duyệt công việc thành công,Job approved successfully,success
 SUCCESS_JOB_REJECT,Đã từ chối công việc thành công,Job rejected successfully,success
-SUCCESS_CV_CREATE,Tạo CV thành công,CV created successfully,success
-SUCCESS_CV_UPDATE,Cập nhật CV thành công,CV updated successfully,success
 SUCCESS_TECH_CREATE,Thêm công nghệ thành công,Technology added successfully,success
 SUCCESS_APPLY_JOB,Ứng tuyển thành công,Job application submitted successfully,success
 SUCCESS_SAVE_JOB,Lưu tin tuyển dụng thành công,Job saved successfully,success
@@ -141,6 +139,17 @@ CV_NOT_FOUND,Không tìm thấy file CV,CV not found,error
 CV_LOAD_ERROR,Không thể tải CV. Vui lòng thử lại sau,Cannot load CV. Please try again later,error
 CV_DELETE_SUCCESS,Xóa CV thành công,CV deleted successfully,success
 CV_DELETE_ERROR,Có lỗi xảy ra khi xóa CV,Error deleting CV,error
+SUCCESS_CV_UPDATE,Cập nhật CV thành công,CV updated successfully,success
+CREATE_CV_SUCCESS,Tạo hồ sơ thành công,Create Cv successfully,success
+
+NOT_FULL_FIELD,Không được để trống,cannot be empty,error		
+NUMBER_PHONE_ERROR,SDT không được để trống,sdt cannot be empty,error
+SET_EXPERIENCE_ERROR ,Số năm kinh nghiệm không được để trống,experience cannot be empty,error
+SET_TITLE_ERROR,Tiêu đề không được để trống,title cannot be empty,error
+SET_LEVEL_ERROR,Mức kinh nghiệm không được để trống,level cannot be empty,error	
+SET_POSITIONTYPE_ERROR,Hình thức làm việc không được để trống,positiontype cannot be empty,error	
+SET_FILE_ERROR,File hồ sơ không được để trống,file cannot be empty,error	
+
 
 # Blog Messages
 ERROR_BLOG_DATA_INVALID,Dữ liệu blog không hợp lệ,Invalid blog data,error
