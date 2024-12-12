@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 
 interface BannerProps {
@@ -7,6 +7,23 @@ interface BannerProps {
 
 export default function Banner({ onSearch }: BannerProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [popularSearches, setPopularSearches] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Danh sách các từ khóa tìm kiếm phổ biến trong ngành IT
+    const defaultSearches = [
+      'Frontend Developer',
+      'Backend Developer',
+      'React Developer',
+      'Java Developer',
+      'DevOps Engineer',
+      'Data Engineer',
+      'Mobile Developer',
+      'UI/UX Designer'
+    ];
+    
+    setPopularSearches(defaultSearches);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,7 +78,7 @@ export default function Banner({ onSearch }: BannerProps) {
           {/* Popular Searches */}
           <div className="mt-8 flex flex-wrap justify-center gap-2">
             <span className="text-sm text-gray-300">Tìm kiếm phổ biến:</span>
-            {['java Developer', 'UI/UX Designer', 'Product Manager'].map((term) => (
+            {popularSearches.map((term) => (
               <button
                 key={term}
                 onClick={() => onSearch(term)}

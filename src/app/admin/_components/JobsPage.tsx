@@ -34,7 +34,8 @@ import {
   FaUserCheck,
   FaHome,
   FaTrash,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaCalendarAlt
 } from "react-icons/fa";
 import { MessageUtils } from "@/utils/messageUtils";
 import { Job } from "@/app/context/JobContext";
@@ -804,6 +805,10 @@ export default function JobPostsManagementPage() {
                         <span className="inline-flex items-center gap-1">
                           <FaRegClock className="w-4 h-4" />
                           {new Date(selectedJob.postingDate).toLocaleDateString('vi-VN')}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <FaCalendarAlt className="w-4 h-4" />
+                          {new Date(selectedJob.expirationDate).toLocaleDateString('vi-VN')}
                         </span>                      
                       </div>
                     </div>
