@@ -13,8 +13,11 @@ import jobApiRequest from "@/app/apiRequest/job";
 import { TechListResType } from "@/app/schemaValidations/tech.schema";
 import techApiRequest from "@/app/apiRequest/tech";
 import { TechDetailCreateBodyType } from "@/app/schemaValidations/techDetail.schema";
+import { getCompanyColor } from "@/components/HomePage";
 import { useCookies } from "react-cookie";
 import { MessageUtils } from "@/utils/messageUtils";
+import { FaMapMarkerAlt } from "react-icons/fa";
+import { FaGlobe } from "react-icons/fa";
 
 interface JobFormData {
   companyName: string;
@@ -1189,11 +1192,26 @@ export default function AddJobPage({
           <div className="bg-white rounded-lg shadow-lg p-6 sticky top-4">
             {/* Banner Image */}
             <div className="mb-4 w-full">
-              <img
-                src="/images/logo.png"
-                alt="Banner"
-                className="w-48 h-48 object-contain mx-auto"
-              />
+            <div className="flex items-center gap-4">
+                <div className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br ${formData.companyName ? getCompanyColor(formData.companyName) : 'from-gray-500 to-gray-600'} flex items-center justify-center text-white font-bold text-2xl shadow-md`}>
+                  {formData.companyName ? formData.companyName.charAt(0).toUpperCase() : '?'}
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                    {formData.companyName}
+                  </h1>
+                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <div className="flex items-center gap-2">
+                      <FaMapMarkerAlt className="text-gray-400" />
+                      <span>{formData.contactAddress}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FaGlobe className="text-gray-400" />
+                      <span>{formData.companyWebsite}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Job Title and Meta */}

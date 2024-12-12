@@ -406,11 +406,28 @@ export default function HomePage() {
                   <tr key={job.jobId} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <p className="text-sm font-medium text-gray-900">{job.title}</p>
-                      {new Date(job.expirationDate) < new Date() && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
-                          Hết hạn
-                        </span>
-                      )}
+                      {(() => {
+                        const today = new Date();
+                        const expirationDate = new Date(job.expirationDate);
+                        const daysUntilExpiration = Math.ceil(
+                          (expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+                        );
+
+                        if (expirationDate < today) {
+                          return (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
+                              Hết hạn
+                            </span>
+                          );
+                        } else if (daysUntilExpiration <= 7) {
+                          return (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
+                              Gần hết hạn ({daysUntilExpiration} ngày)
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
