@@ -1,3 +1,5 @@
+/* eslint-disable react/no-is-mounted */
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { parse } from 'csv-parse/sync';
 
 interface MessageItem {

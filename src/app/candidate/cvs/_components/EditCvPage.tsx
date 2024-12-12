@@ -8,6 +8,7 @@ import PdfViewer from "@/components/PdfViewer";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
+import { MessageUtils } from "@/utils/messageUtils";
 
 export default function EditCvPage({
   cv,
@@ -97,26 +98,25 @@ export default function EditCvPage({
     const formErrors: { [key: string]: string } = {};
 
     // Kiểm tra từng trường
-    if (!fullName) formErrors.fullName = "Họ tên không được để trống.";
-    if (!address) formErrors.address = "Địa chỉ không được để trống.";
-    if (!phone) formErrors.phone = "Số điện thoại không được để trống.";
-    if (!email) formErrors.email = "Email không được để trống.";
-    if (!school) formErrors.school = "Trường học không được để trống.";
-    if (!language) formErrors.language = "Ngôn ngữ không được để trống.";
-    if (!experience)
-      formErrors.experience = "Kinh nghiệm làm việc không được để trống.";
-    if (!title) formErrors.title = "Chức danh mong muốn không được để trống.";
+    if (!fullName) formErrors.fullName = MessageUtils.getMessage("NOT_FULL_FIELD");
+    if (!address) formErrors.address = MessageUtils.getMessage("NOT_FULL_FIELD");
+    if (!phone) formErrors.phone = MessageUtils.getMessage("NUMBER_PHONE_ERROR");
+    if (!email) formErrors.email = MessageUtils.getMessage("NOT_FULL_FIELD");
+    if (!school) formErrors.school = MessageUtils.getMessage("NOT_FULL_FIELD");
+    if (!language) formErrors.language = MessageUtils.getMessage("NOT_FULL_FIELD");
+    if (!experience) formErrors.experience = MessageUtils.getMessage("SET_EXPERIENCE_ERROR");
+    if (!title) formErrors.title = MessageUtils.getMessage("SET_TITLE_ERROR");
     if (!currentSalary)
-      formErrors.currentSalary = "Lương hiện tại không được để trống.";
+      formErrors.currentSalary = MessageUtils.getMessage("NOT_FULL_FIELD");
     if (!preferenceSalary)
-      formErrors.preferenceSalary = "Lương mong muốn không được để trống.";
-    if (!levelId) formErrors.level = "Cấp độ nghề nghiệp không được để trống.";
+      formErrors.preferenceSalary = MessageUtils.getMessage("NOT_FULL_FIELD");
+    if (!levelId)
+      formErrors.levelId = MessageUtils.getMessage("SET_LEVEL_ERROR");
     if (!positionType)
-      formErrors.positionType = "Loại hình công việc không được để trống.";
+      formErrors.positionType = MessageUtils.getMessage("SET_POSITIONTYPE_ERROR");
     if (!workLocation)
-      formErrors.workLocation =
-        "Địa điểm làm việc mong muốn không được để trống.";
-    if (!file) formErrors.file = "Vui lòng tải lên file CV.";
+      formErrors.workLocation = MessageUtils.getMessage("NOT_FULL_FIELD");
+    if (!file) formErrors.file = MessageUtils.getMessage("SET_FILE_ERROR");
 
     // Đặt lỗi vào state và trả về true nếu không có lỗi, false nếu có lỗi
     setErrors(formErrors);
