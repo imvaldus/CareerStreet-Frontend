@@ -16,6 +16,8 @@ import { TechListResType } from "@/app/schemaValidations/tech.schema";
 import { useApplyContext } from "@/app/context/ApplyContext";
 import ApiRequestSave from "@/app/apiRequest/save";
 import { toast } from "react-toastify";
+
+import Alert from "@/components/Alert";
 import { getCompanyColor } from "@/components/HomePage";
 import { FaGlobe, FaMapMarkerAlt } from "react-icons/fa";
 import { useJobContext } from "@/app/context/JobContext";
@@ -107,10 +109,10 @@ export default function JobsPage({
       });
 
       if (response.status === 200) {
-        alert("Công việc đã được lưu thành công!");
+       Alert.success("success","Công việc đã lưu thành công");
       }
     } catch (error) {
-      alert("Công việc này đã được lưu.");
+      Alert.error("error", "Công việc đã được lưu")
     }
   };
 

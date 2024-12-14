@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { AiOutlineRight, AiOutlineLeft } from "react-icons/ai";
+import { AiOutlineRight, AiOutlineLeft, AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { useState, useEffect } from "react"; // Thêm useEffect
 import { useJobContext } from "@/app/context/JobContext";
 import {
@@ -57,6 +57,9 @@ export default function HomePage() {
     jobRank: "",
     companyName: ""
   });
+
+  // Thêm state mới
+  const [savedJobs, setSavedJobs] = useState<string[]>([]);
 
   // Thay đổi 3: Thêm useEffect để cập nhật filteredJobs khi context thay đổi
   useEffect(() => {
@@ -160,7 +163,6 @@ export default function HomePage() {
     setCurrentPage(0);
   };
 
-
   // Hàm dùng để reset jobs
   const handleResetFilters = () => {
     setFilters({
@@ -245,6 +247,23 @@ export default function HomePage() {
       setCurrentPage(0);
     }
   };
+
+  // Thêm handlers mới
+  const handleSaveJob = (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault();
+    setSavedJobs(prev => 
+      prev.includes(jobId) 
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    );
+  };
+
+  const handleApply = (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault();
+    // Thêm logic xử lý ứng tuyển ở đây
+    console.log('Ứng tuyển công việc:', jobId);
+  };
+
   return (
     <>
       <Banner onSearch={handleBannerSearch} />
@@ -364,6 +383,7 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {currentJobs.map((job) => (
                     <Link key={job.jobId} href={`/jobs/${job.jobId}`}>
+
                       <div className="group relative h-full rounded-xl bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-gray-800">
 
                         <div className="flex flex-col gap-4">
@@ -374,6 +394,7 @@ export default function HomePage() {
                             </div>
                             <div>
                               <h4 className="font-medium text-gray-900 dark:text-white">
+
                                 {job.companyName}
                               </h4>
                               <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
@@ -383,6 +404,12 @@ export default function HomePage() {
                                 </svg>
                                 {job.jobLocation}
                               </div>
+                              <button
+                                onClick={(e) => handleApply(e, String(job.jobId))}
+                                className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                              >
+                                Ứng tuyển ngay
+                              </button>
                             </div>
                           </div>
 
