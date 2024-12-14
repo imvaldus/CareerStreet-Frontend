@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { AiOutlineRight, AiOutlineLeft } from "react-icons/ai";
+import { AiOutlineRight, AiOutlineLeft, AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { useState, useEffect } from "react"; // Thêm useEffect
 import { useJobContext } from "@/app/context/JobContext";
 import {
@@ -39,6 +39,9 @@ export default function HomePage() {
     jobRank: "",
     companyName: ""
   });
+
+  // Thêm state mới
+  const [savedJobs, setSavedJobs] = useState<string[]>([]);
 
   // Thay đổi 3: Thêm useEffect để cập nhật filteredJobs khi context thay đổi
   useEffect(() => {
@@ -112,7 +115,6 @@ export default function HomePage() {
     setFilteredJobs(filtered);
     setCurrentPage(0);
   };
-
 
   // Hàm dùng để reset jobs
   const handleResetFilters = () => {
@@ -198,6 +200,23 @@ export default function HomePage() {
       setCurrentPage(0);
     }
   };
+
+  // Thêm handlers mới
+  const handleSaveJob = (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault();
+    setSavedJobs(prev => 
+      prev.includes(jobId) 
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    );
+  };
+
+  const handleApply = (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault();
+    // Thêm logic xử lý ứng tuyển ở đây
+    console.log('Ứng tuyển công việc:', jobId);
+  };
+
   return (
     <>
       <Banner onSearch={handleBannerSearch} />
@@ -325,9 +344,21 @@ export default function HomePage() {
                             className="h-12 w-12 rounded-lg object-cover"
                           />
                           <div className="flex-1 space-y-2">
-                            <h3 className="line-clamp-2 font-medium text-gray-900 group-hover:text-blue-600 dark:text-white">
-                              {job.title}
-                            </h3>
+                            <div className="flex justify-between items-start">
+                              <h3 className="line-clamp-2 font-medium text-gray-900 group-hover:text-blue-600 dark:text-white">
+                                {job.title}
+                              </h3>
+                              <button
+                                onClick={(e) => handleSaveJob(e, String(job.jobId))}
+                                className="text-gray-400 hover:text-red-500 transition-colors"
+                              >
+                                {savedJobs.includes(String(job.jobId)) ? (
+                                  <AiFillHeart className="text-red-500" size={20} />
+                                ) : (
+                                  <AiOutlineHeart size={20} />
+                                )}
+                              </button>
+                            </div>
                             <div className="space-y-1">
                               <p className="text-sm text-gray-600 dark:text-gray-400">
                                 {job.companyName}
@@ -340,6 +371,12 @@ export default function HomePage() {
                                   {job.salary ? `${job.salary.toLocaleString()} VNĐ` : "Thương lượng"}
                                 </span>
                               </div>
+                              <button
+                                onClick={(e) => handleApply(e, String(job.jobId))}
+                                className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                              >
+                                Ứng tuyển ngay
+                              </button>
                             </div>
                           </div>
                         </div>
