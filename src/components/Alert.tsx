@@ -1,51 +1,58 @@
 // AlertComponent.tsx
-// import goodsApiRequest from "@/app/apiRequest/goods";
 import Swal from "sweetalert2";
+import { MessageUtils } from "@/utils/messageUtils";
 
 export type OrderItem = {
   serviceName: string;
   quantity: number;
-  price: number; // Giá mỗi dịch vụ
-  total: number; // Thành tiền từng dịch vụ
+  price: number;
+  total: number;
 };
 
+type AlertType = 'success' | 'error' | 'warning' | 'info';
+
 const AlertComponent = {
-  success: (title?: string, text?: string) => {
+  showMessage: (
+    title: string,
+    message?: string | Record<string, string | number>,
+    type: AlertType = 'info',
+    lang: 'vi' | 'en' = 'vi'
+  ) => {
+    let finalTitle: string;
+    let finalMessage: string | undefined;
+
+    // Check if title starts with message code pattern (e.g., "MSG_", "ERR_")
+    if (title.includes('_')) {
+      finalTitle = MessageUtils.getMessage(title, lang, typeof message === 'object' ? message : undefined);
+      type = MessageUtils.getType(title);
+    } else {
+      finalTitle = title;
+      finalMessage = typeof message === 'string' ? message : undefined;
+    }
+
     Swal.fire({
-      title: title || "Success!",
-      text: text || "Operation completed successfully.",
-      icon: "success",
+      title: finalTitle,
+      text: finalMessage,
+      icon: type,
       confirmButtonText: "OK",
     });
   },
 
-  error: (title?: string, text?: string) => {
-    Swal.fire({
-      title: title || "Error!",
-      text: text || "Something went wrong.",
-      icon: "error",
-      confirmButtonText: "OK",
-    });
+  success: (title: string, message?: string | Record<string, string | number>, lang: 'vi' | 'en' = 'vi') => {
+    AlertComponent.showMessage(title, message, 'success', lang);
   },
 
-  info: (title?: string, text?: string) => {
-    Swal.fire({
-      title: title || "Information",
-      text: text || "Here is some information.",
-      icon: "info",
-      confirmButtonText: "OK",
-    });
+  error: (title: string, message?: string | Record<string, string | number>, lang: 'vi' | 'en' = 'vi') => {
+    AlertComponent.showMessage(title, message, 'error', lang);
   },
 
-  warning: (title?: string, text?: string) => {
-    Swal.fire({
-      title: title || "Warning!",
-      text: text || "Please be careful.",
-      icon: "warning",
-      confirmButtonText: "OK",
-    });
+  warning: (title: string, message?: string | Record<string, string | number>, lang: 'vi' | 'en' = 'vi') => {
+    AlertComponent.showMessage(title, message, 'warning', lang);
   },
 
+  info: (title: string, message?: string | Record<string, string | number>, lang: 'vi' | 'en' = 'vi') => {
+    AlertComponent.showMessage(title, message, 'info', lang);
+  }
 };
 
 export default AlertComponent;

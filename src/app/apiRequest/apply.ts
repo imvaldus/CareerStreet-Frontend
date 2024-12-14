@@ -1,4 +1,4 @@
-import { ApplyCreateBodyType, ApplyResType } from "../schemaValidations/apply.schema"
+import { ApplicationCountResponseType, ApplyCreateBodyType, ApplyResType } from "../schemaValidations/apply.schema"
 import http from "../untils/http"
 
 const applyApiRequest ={
@@ -14,6 +14,7 @@ const applyApiRequest ={
       http.get<boolean>(`apply/check-application?candidateId=${candidateId}&jobId=${jobId}`),
     getAppliesByEmployerId: (employerId: number) =>
       http.get<ApplyResType>(`apply/getAppliesByEmployerId/${employerId}`),
-        
+    getApplicationCount: (jobId: number) =>
+      http.get<ApplicationCountResponseType>(`apply/count/${jobId}`),
 }
 export default applyApiRequest

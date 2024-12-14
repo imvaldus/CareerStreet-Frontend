@@ -4,22 +4,18 @@ import { ApplyListResType } from "@/app/schemaValidations/apply.schema";
 
 type ApplyContextType = {
   appliesListByCandidateId: ApplyListResType["data"] | null;
-  setAppliesListByCandidateId: React.Dispatch<
-    React.SetStateAction<ApplyListResType["data"] | null>
-  > | null;
+  setAppliesListByCandidateId: React.Dispatch<React.SetStateAction<ApplyListResType["data"] | null>>;
   appliesListByEmployerId: ApplyListResType["data"] | null;
-  setAppliesListByEmployerId: React.Dispatch<
-    React.SetStateAction<ApplyListResType["data"] | null>
-  > | null;
-  checkApplicationStatus: (jobId: number) => Promise<boolean>; // Thêm hàm kiểm tra
+  setAppliesListByEmployerId: React.Dispatch<React.SetStateAction<ApplyListResType["data"] | null>>;
+  checkApplicationStatus: (jobId: number) => Promise<boolean>;
 };
 
 const ApplyContext = createContext<ApplyContextType>({
   appliesListByCandidateId: null,
-  setAppliesListByCandidateId: null,
+  setAppliesListByCandidateId: () => {},
   appliesListByEmployerId: null,
-  setAppliesListByEmployerId: null,
-  checkApplicationStatus: async () => false, // Default cho context
+  setAppliesListByEmployerId: () => {},
+  checkApplicationStatus: async () => false,
 });
 
 export const ApplyProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -46,6 +42,8 @@ export const ApplyProvider: React.FC<{ children: React.ReactNode }> = ({
 
           if (Array.isArray(appliesResult.payload.data)) {
             setAppliesListByCandidateId(appliesResult.payload.data);
+          } else if (appliesResult.payload.data) {
+            setAppliesListByEmployerId([appliesResult.payload.data]);
           } else {
             setAppliesListByCandidateId([appliesResult.payload.data]);
           }

@@ -87,8 +87,26 @@ const request = async <Response>(
     method,
   });
 
-  // Xử lý response
-  const payload: Response = await res.json();
+  let payload: Response;
+  const contentType = res.headers.get("content-type");
+  
+  try {
+    if (contentType && contentType.includes("application/json")) {
+      payload = await res.json();
+    } else {
+      const textResponse = await res.text();
+      payload = {
+        message: textResponse,
+        data: null
+      } as Response;
+    }
+  } catch (error) {
+    console.error("Error parsing response:", error);
+    throw new HttpError({
+      status: res.status,
+      payload: { message: "Invalid response format from server" }
+    });
+  }
 
   const data = {
     status: res.status,
