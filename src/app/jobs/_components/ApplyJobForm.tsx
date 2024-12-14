@@ -43,16 +43,21 @@ const ApplyJobForm: React.FC<ApplyJobFormProps> = ({
   };
 
   const validateForm = () => {
-    const { coverLetter } = formData;
+    const { coverLetter, candidateCvId } = formData;
     const formErrors: { [key: string]: string } = {};
     if (!coverLetter) {
       formErrors.coverLetter = "Thư xin việc không được để trống.";
+    }
+
+    if (!candidateCvId) { // Kiểm tra nếu không có CV được chọn (MỚI)
+      formErrors.candidateCvId = "Vui lòng chọn CV."; // Thêm thông báo lỗi (MỚI)
     }
     setErrors(formErrors);
     return Object.keys(formErrors).length === 0;
   };
 
   const router = useRouter();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
@@ -129,6 +134,7 @@ const ApplyJobForm: React.FC<ApplyJobFormProps> = ({
                       </option>
                     ))}
                 </select>
+                {errors.candidateCvId && <span className="text-red-500 text-sm">{errors.candidateCvId}</span>} {/* Hiển thị thông báo lỗi nếu không chọn CV */}
               </div>
               <div className="col-span-2">
                 <label htmlFor="coverLetter" className="block mb-2 text-sm font-bold text-black">
