@@ -3,8 +3,9 @@ import { cookies } from "next/headers";
 import JobsPage from "./_components/JobsPage";
 import jobApiRequest from "@/app/apiRequest/job";
 import { JobListResType } from "@/app/schemaValidations/job.schema";
+import applyApiRequest from "@/app/apiRequest/apply";
 
-export default async function Jobs() {
+export default async function EmployerJobsPage() {
   const cookieTmp = cookies();
   const sessionToken = cookieTmp.get("sessionToken");
 
@@ -51,9 +52,31 @@ export default async function Jobs() {
     });
   }
 
+  // Lấy số lượng đơn ứng tuyển cho mỗi công việc
+  const applications = await Promise.all(
+    jobList?.map(async (job) => {
+      try {
+        const response = await applyApiRequest.getApplicationCount(job.jobId);
+        const count = response.payload.data || 0;
+        return { jobId: job.jobId, count };
+      } catch (error) {
+        console.error(`Error fetching applications for job ${job.jobId}:`, error);
+        return { jobId: job.jobId, count: 0 };
+      }
+    }) ?? []
+  );
+
+  const numberOfApplications = applications.reduce((acc, curr) => {
+    acc[curr.jobId] = curr.count;
+    return acc;
+  }, {} as { [key: number]: number });
+
   return (
     <>
-      <JobsPage jobList={jobList} />
+      <JobsPage 
+        jobList={jobList} 
+        numberOfApplications={numberOfApplications}
+      />
     </>
   );
 }

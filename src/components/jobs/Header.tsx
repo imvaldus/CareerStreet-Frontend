@@ -8,6 +8,7 @@ import icon from "/public/images/icon.jpg";
 import { MdKeyboardArrowDown } from "react-icons/md"; // Import biểu tượng từ react-icons
 
 export default function Header() {
+  const [isOpen, setIsOpen] = useState(false); // Thêm trạng thái quản lý dropdown
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -78,7 +79,11 @@ export default function Header() {
           ) : (
             /* Giao diện khi người dùng đã đăng nhập */
             <div className="relative group z-50">
-              <div className="flex items-center gap-2 cursor-pointer">
+              {/* Nút hiển thị dropdown */}
+              <div
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={() => setIsOpen(!isOpen)} // Toggle trạng thái khi click
+              >
                 <Image
                   className="w-10 h-10 rounded-full border border-gray-300 shadow-sm"
                   src={icon}
@@ -91,6 +96,7 @@ export default function Header() {
               </div>
 
               {/* Menu tùy chọn */}
+              {isOpen && (
               <ul className="absolute right-0 top-full mt-2 w-48 bg-white shadow-lg rounded-lg opacity-0 group-hover:opacity-100 transform group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-10">
                 <li>
                   <Link
@@ -111,7 +117,7 @@ export default function Header() {
                 <li>
                   <Link
                     className="text-xs block px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-600 transition-colors duration-200"
-                    href="candidate/saved"
+                    href="/candidate/saved"
                   >
                     Việc đã lưu
                   </Link>
@@ -137,6 +143,7 @@ export default function Header() {
                   </button>
                 </li>
               </ul>
+              )}
             </div>
           )}
         </div>

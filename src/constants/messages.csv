@@ -1,0 +1,160 @@
+code,vi,en,type
+# Success Messages
+SUCCESS_JOB_CREATE,Đăng tin tuyển dụng thành công,Job posted successfully,success
+SUCCESS_JOB_UPDATE,Cập nhật tin tuyển dụng thành công,Job updated successfully,success
+SUCCESS_JOB_DELETE,Xóa tin tuyển dụng thành công,Job deleted successfully,success
+SUCCESS_JOB_APPROVE,Đã duyệt công việc thành công,Job approved successfully,success
+SUCCESS_JOB_REJECT,Đã từ chối công việc thành công,Job rejected successfully,success
+SUCCESS_TECH_CREATE,Thêm công nghệ thành công,Technology added successfully,success
+SUCCESS_APPLY_JOB,Ứng tuyển thành công,Job application submitted successfully,success
+SUCCESS_SAVE_JOB,Lưu tin tuyển dụng thành công,Job saved successfully,success
+SUCCESS_JOB_SCHEDULED,Tin tuyển dụng sẽ được đăng vào ngày {date},Job will be posted on {date},success
+
+# Error Messages
+ERROR_SERVER,Đã xảy ra lỗi hệ thống,A system error occurred,error
+ERROR_NETWORK,Lỗi kết nối mạng,Network connection error,error
+ERROR_UNAUTHORIZED,Bạn cần đăng nhập để thực hiện thao tác này,You need to login to perform this action,error
+ERROR_FORBIDDEN,Bạn không có quyền thực hiện thao tác này,You don't have permission to perform this action,error
+ERROR_NOT_FOUND,Không tìm thấy {resource},{resource} not found,error
+ERROR_JOB_CREATE,Đã xảy ra lỗi khi tạo công việc,Error creating job,error
+ERROR_JOB_UPDATE,Đã xảy ra lỗi khi cập nhật công việc,Error updating job,error
+ERROR_JOB_DETAIL_FETCH,Không thể lấy thông tin chi tiết công việc,Cannot fetch job details,error
+ERROR_JOB_STATUS_UPDATE,Không thể cập nhật trạng thái công việc,Cannot update job status,error
+ERROR_CV_CREATE,Đã xảy ra lỗi khi tạo hồ sơ,Error creating CV,error
+ERROR_CV_UPDATE,Đã xảy ra lỗi khi cập nhật hồ sơ,Error updating CV,error
+
+# Required Field Messages
+ERROR_REQUIRED_FIELD,{field} không được để trống,{field} is required,error
+ERROR_REQUIRED_CONTACT_ADDRESS,Địa chỉ liên hệ không được để trống,Contact address is required,error
+ERROR_REQUIRED_POSTING_DATE,Ngày đăng tin không được để trống,Posting date is required,error
+ERROR_REQUIRED_EXPIRATION_DATE,Ngày hết hạn không được để trống,Expiration date is required,error
+ERROR_REQUIRED_COMPANY_OVERVIEW,Giới thiệu công ty không được để trống,Company overview is required,error
+ERROR_REQUIRED_JOB_LOCATION,Địa điểm làm việc không được để trống,Job location is required,error
+ERROR_REQUIRED_JOB_DESCRIPTION,Mô tả công việc không được để trống,Job description is required,error
+ERROR_REQUIRED_JOB_REQUIREMENTS,Yêu cầu công việc không được để trống,Job requirements is required,error
+ERROR_REQUIRED_BENEFITS,Quyền lợi không được để trống,Benefits is required,error
+ERROR_REQUIRED_EDUCATION,Yêu cầu học vấn không được để trống,Education requirement is required,error
+ERROR_REQUIRED_JOB_RANK,Cấp bậc công việc không được để trống,Job rank is required,error
+ERROR_REQUIRED_JOB_TITLE,Tiêu đề công việc không được để trống,Job title is required,error
+ERROR_REQUIRED_COMPANY_NAME,Tên công ty không được để trống,Company name is required,error
+ERROR_REQUIRED_COMPANY_WEBSITE,Website công ty không được để trống,Company website is required,error
+ERROR_REQUIRED_NUMBER_OF_EMPLOYEES,Số lượng nhân viên không được để trống,Number of employees is required,error
+ERROR_REQUIRED_JOB_TYPE,Loại công việc không được để trống,Job type is required,error
+ERROR_REQUIRED_CONTACT_PERSON,Người liên hệ không được để trống,Contact person is required,error
+ERROR_REQUIRED_CONTACT_PHONE,Số điện thoại liên hệ không được để trống,Contact phone is required,error
+ERROR_REQUIRED_CONTACT_EMAIL,Email liên hệ không được để trống,Contact email is required,error
+ERROR_REQUIRED_LEVEL,Cấp độ không được để trống,Level is required,error
+ERROR_REQUIRED_TECH,Công nghệ không được để trống,Technology is required,error
+ERROR_REQUIRED_SALARY,Mức lương không được để trống,Salary is required,error
+ERROR_REQUIRED_WEBSITE,Website không được để trống,Website is required,error
+ERROR_REQUIRED_EMPLOYEES,Số lượng nhân viên không được để trống,Number of employees is required,error
+ERROR_REQUIRED_EDUCATION_LEVEL,Yêu cầu học vấn không được để trống,Education level is required,error
+ERROR_REQUIRED_JOB_RANK,Cấp bậc công việc không được để trống,Job rank is required,error
+ERROR_REQUIRED_GENDER,Giới tính không được để trống,Gender is required,error
+ERROR_REQUIRED_VIEWS,Lượt xem không được để trống,Views is required,error
+ERROR_REQUIRED_STATUS,Trạng thái không được để trống,Status is required,error
+ERROR_REQUIRED_EMPLOYER_ID,ID nhà tuyển dụng không được để trống,Employer ID is required,error
+ERROR_REQUIRED_TECH_IDS,Danh sách công nghệ không được để trống,Technology list is required,error
+ERROR_REQUIRED_LEVEL_ID,Cấp độ không được để trống,Level ID is required,error
+ERROR_REQUIRED_LEVEL_NAME,Tên cấp độ không được để trống,Level name is required,error
+
+# Validation Messages
+ERROR_INVALID_EMAIL,Email không hợp lệ,Invalid email address,error
+ERROR_INVALID_PHONE,Số điện thoại không hợp lệ (cần 10-11 số),Invalid phone number (10-11 digits required),error
+ERROR_INVALID_DATE,Ngày {field} phải lớn hơn ngày hiện tại,{field} date must be in the future,error
+ERROR_MIN_LENGTH,{field} phải có ít nhất {min} ký tự,{field} must be at least {min} characters,error
+ERROR_INVALID_RECRUITMENT,Số lượng tuyển dụng phải lớn hơn 0,Number of recruitment must be greater than 0,error
+ERROR_POSTING_DATE_FUTURE,Thời gian đăng tin không hợp lệ (trong tương lai),Invalid posting date (in future),error
+
+# Job Violations Messages
+ERROR_SALARY_TOO_LOW,Mức lương được đề xuất quá thấp (dưới 1 triệu VNĐ),Proposed salary is too low (below 1M VND),error
+ERROR_SALARY_TOO_HIGH,Mức lương được đề xuất quá cao (trên 100 triệu VNĐ),Proposed salary is too high (above 100M VND),warning
+ERROR_TITLE_BANNED_WORD,Tiêu đề có chứa từ khóa cấm: {word},Title contains banned word: {word},error
+ERROR_TITLE_TOO_SHORT,Tiêu đề quá ngắn (dưới 20 ký tự),Title is too short (under 20 characters),error
+ERROR_TITLE_TOO_LONG,Tiêu đề quá dài (trên 150 ký tự),Title is too long (over 150 characters),warning
+ERROR_DESCRIPTION_TOO_SHORT,Mô tả công việc quá ngắn hoặc không có,Job description is too short or empty,error
+ERROR_REQUIREMENTS_TOO_SHORT,Yêu cầu công việc quá ngắn hoặc không có,Job requirements are too short or empty,error
+ERROR_BENEFITS_TOO_SHORT,Quyền lợi quá ít hoặc không có,Benefits are too short or empty,warning
+ERROR_RECRUITMENT_TOO_HIGH,Số lượng tuyển dụng quá lớn (trên 100),Recruitment number too high (above 100),warning
+ERROR_LOCATION_INVALID,Địa điểm làm việc không hợp lệ hoặc quá ngắn,Invalid or too short work location,error
+ERROR_GENDER_INVALID,Yêu cầu giới tính không hợp lệ,Invalid gender requirement,error
+ERROR_AGE_MIN_INVALID,Độ tuổi tối thiểu không được dưới 15 tuổi,Minimum age cannot be below 15,error
+ERROR_AGE_MAX_INVALID,Độ tuổi tối đa không nên trên 60 tuổi,Maximum age should not exceed 60,warning
+
+# Suggestions
+SUGGESTION_JOB_DESCRIPTION_LENGTH,Mô tả công việc nên chi tiết tối thiểu 100 ký tự,Job description should be detailed with minimum 100 characters,suggestion
+SUGGESTION_JOB_REQUIREMENTS_LENGTH,Yêu cầu công việc phải rõ ràng ít nhất 50 ký tự,Job requirements should be clear with minimum 50 characters,suggestion
+SUGGESTION_BENEFITS_LENGTH,Quyền lợi phải rõ ràng ít nhất 50 ký tự,Benefits should be clear with minimum 50 characters,suggestion
+SUGGESTION_JOB_LOCATION,Cung cấp địa chỉ cụ thể: số nhà đường quận/huyện tỉnh/thành phố,Provide specific address: street district city,suggestion
+SUGGESTION_RECRUITMENT_NUMBER,Nếu cần tuyển số lượng lớn hãy chia nhỏ thành nhiều đợt,If large recruitment is needed split into multiple phases,suggestion
+
+# Job Validation Messages
+ERROR_JOB_DESCRIPTION_TOO_SHORT,Mô tả công việc quá ngắn hoặc không có,Job description is too short or empty,error
+ERROR_JOB_REQUIREMENTS_TOO_SHORT,Yêu cầu công việc quá ngắn hoặc không có,Job requirements are too short or empty,error
+ERROR_JOB_LOCATION_INVALID,Địa điểm làm việc không hợp lệ hoặc quá ngắn,Invalid or too short work location,error
+ERROR_RECRUITMENT_NUMBER_TOO_HIGH,Số lượng tuyển dụng quá lớn (trên 100),Recruitment number too high (above 100),warning
+ERROR_INVALID_RECRUITMENT_NUMBER,Số lượng tuyển dụng không hợp lệ,Invalid recruitment number,error
+ERROR_FUTURE_POSTING_DATE,Thời gian đăng tin không hợp lệ (trong tương lai),Invalid posting date (in future),error
+ERROR_INVALID_GENDER_REQUIREMENT,Yêu cầu giới tính không hợp lệ,Invalid gender requirement,error
+ERROR_MIN_AGE_TOO_LOW,Độ tuổi tối thiểu không được dưới 15 tuổi,Minimum age cannot be below 15,error
+ERROR_MAX_AGE_TOO_HIGH,Độ tuổi tối đa không nên trên 60 tuổi,Maximum age should not exceed 60,warning
+ERROR_INVALID_EXPIRATION_DATE,Ngày hết hạn phải sau ngày đăng tin,Expiration date must be after posting date,error
+ERROR_INVALID_NUMBER_OF_RECRUITMENT,Số lượng tuyển dụng phải lớn hơn 0,Number of recruitment must be greater than 0,error
+ERROR_INVALID_POSTING_DATE,Ngày đăng tin không hợp lệ,Invalid posting date,error
+
+# Date Validation Messages
+ERROR_POSTING_AFTER_EXPIRATION,Ngày đăng không thể sau ngày hết hạn,Posting date cannot be after expiration date,error
+ERROR_EXPIRATION_BEFORE_POSTING,Ngày hết hạn không thể trước ngày đăng,Expiration date cannot be before posting date,error
+ERROR_INVALID_DATE,Ngày {field} không hợp lệ,Invalid {field} date,error
+ERROR_POSTING_DATE_FUTURE,Ngày đăng không thể trong tương lai,Posting date cannot be in the future,error
+ERROR_EXPIRATION_DATE_PAST,Ngày hết hạn không thể trong quá khứ,Expiration date cannot be in the past,error
+
+# Employees Validation Messages
+ERROR_REQUIRED_EMPLOYEES,Vui lòng nhập số lượng nhân viên,Please enter the number of employees,error
+ERROR_EMPLOYEES_TOO_LOW,Số lượng nhân viên phải lớn hơn 0,Number of employees must be greater than 0,error
+ERROR_EMPLOYEES_TOO_HIGH,Số lượng nhân viên không thể vượt quá 1.000.000,Number of employees cannot exceed 1.000.000,warning
+ERROR_EMPLOYEES_MUST_BE_INTEGER,Số lượng nhân viên phải là số nguyên,Number of employees must be an integer,error
+
+# Additional Messages
+ERROR_REQUIRED_WEBSITE,Vui lòng nhập website công ty,Please enter company website,error
+ERROR_INVALID_WEBSITE,Website không hợp lệ. Vui lòng nhập đúng định dạng (vd: https://example.com),Invalid website format. Please enter a valid URL (e.g. https://example.com),error
+ERROR_REQUIRED_TECH,Vui lòng chọn ít nhất một công nghệ,Please select at least one technology,error
+ERROR_TOO_MANY_TECH,Không thể chọn quá 10 công nghệ,Cannot select more than 10 technologies,error
+ERROR_REQUIRED_LEVEL,Vui lòng chọn mức kinh nghiệm,Please select experience level,error
+
+# Job Admin Messages
+SUCCESS_JOB_APPROVE,Phê duyệt tin tuyển dụng thành công,Job approved successfully,success
+SUCCESS_JOB_REJECT,Từ chối tin tuyển dụng thành công,Job rejected successfully,success
+SUCCESS_JOB_DELETE,Xóa tin tuyển dụng thành công,Job deleted successfully,success
+ERROR_JOB_APPROVE,Có lỗi xảy ra khi phê duyệt tin tuyển dụng,Error approving job,error
+ERROR_JOB_REJECT,Có lỗi xảy ra khi từ chối tin tuyển dụng,Error rejecting job,error
+ERROR_JOB_DELETE,Có lỗi xảy ra khi xóa tin tuyển dụng,Error deleting job,error
+ERROR_JOB_LOAD,Có lỗi xảy ra khi tải danh sách tin tuyển dụng,Error loading job list,error
+CONFIRM_JOB_APPROVE,Bạn có chắc chắn muốn phê duyệt tin tuyển dụng này?,Are you sure you want to approve this job posting?,confirm
+CONFIRM_JOB_REJECT,Bạn có chắc chắn muốn từ chối tin tuyển dụng này?,Are you sure you want to reject this job posting?,confirm
+CONFIRM_JOB_DELETE,Bạn có chắc chắn muốn xóa tin tuyển dụng này?,Are you sure you want to delete this job posting?,confirm
+
+# CV Messages
+CV_NOT_FOUND,Không tìm thấy file CV,CV not found,error
+CV_LOAD_ERROR,Không thể tải CV. Vui lòng thử lại sau,Cannot load CV. Please try again later,error
+CV_DELETE_SUCCESS,Xóa CV thành công,CV deleted successfully,success
+CV_DELETE_ERROR,Có lỗi xảy ra khi xóa CV,Error deleting CV,error
+SUCCESS_CV_UPDATE,Cập nhật CV thành công,CV updated successfully,success
+CREATE_CV_SUCCESS,Tạo hồ sơ thành công,Create Cv successfully,success
+
+NOT_FULL_FIELD,Không được để trống,cannot be empty,error		
+NUMBER_PHONE_ERROR,SDT không được để trống,sdt cannot be empty,error
+SET_EXPERIENCE_ERROR ,Số năm kinh nghiệm không được để trống,experience cannot be empty,error
+SET_TITLE_ERROR,Tiêu đề không được để trống,title cannot be empty,error
+SET_LEVEL_ERROR,Mức kinh nghiệm không được để trống,level cannot be empty,error	
+SET_POSITIONTYPE_ERROR,Hình thức làm việc không được để trống,positiontype cannot be empty,error	
+SET_FILE_ERROR,File hồ sơ không được để trống,file cannot be empty,error	
+
+
+# Blog Messages
+ERROR_BLOG_DATA_INVALID,Dữ liệu blog không hợp lệ,Invalid blog data,error
+ERROR_BLOG_LOAD,Không thể tải danh sách blog,Cannot load blog list,error
+ERROR_BLOG_CREATE,Có lỗi xảy ra khi tạo blog,Error creating blog,error
+ERROR_BLOG_DELETE,Có lỗi xảy ra khi xóa blog,Error deleting blog,error
+SUCCESS_BLOG_DELETE,Đã xóa blog thành công,Blog deleted successfully,success
+SUCCESS_BLOG_CREATE,Đã tạo blog thành công,Blog created successfully,success

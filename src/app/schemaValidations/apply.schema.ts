@@ -52,7 +52,14 @@ export const ApplyListRes = z.object({
   message: z.string(), // Thông báo kết quả
 });
 
+export const ApplicationCountRes = z.object({
+  code: z.string(),
+  message: z.string(),
+  data: z.number(),
+});
+
 // Định nghĩa type dựa trên schema mới
 export type ApplyResType = z.TypeOf<typeof ApplyRes>;
 export type ApplyCreateBodyType = z.TypeOf<typeof ApplyCreateBody>;
 export type ApplyListResType = z.TypeOf<typeof ApplyListRes>;
+export type ApplicationCountResponseType = z.TypeOf<typeof ApplicationCountRes>;
