@@ -98,7 +98,7 @@ export default function JobsPage({
       });
 
       if (response.status === 200) {
-       Alert.success("success","Công việc đã lưu thành công");
+        Alert.success("success", "Công việc đã lưu thành công");
       }
     } catch (error) {
       Alert.error("error", "Công việc đã được lưu")
@@ -127,6 +127,28 @@ export default function JobsPage({
 
     checkStatus();
   }, [job?.jobId, checkApplicationStatus]); // Chạy lại khi jobId thay đổi
+// DÙNG ĐỂ HIỂN THỊ TRẠNG THÁI BUTTON SAVE
+  const [savedJobs, setSavedJobs] = useState<number[]>([]);
+  useEffect(() => {
+    const fetchSavedJobs = async () => {
+      const username = getCookie("username");
+      const sessionToken = getCookie("sessionToken");
+      if (!username || !candidateId || !sessionToken) return;
+
+      try {
+        const response = await ApiRequestSave.getListSaveJobforCandidate(candidateId, sessionToken);
+        if (response.status === 200) {
+          const savedJobIds = response.payload.data.map((job: { jobId: number }) => job.jobId);
+          setSavedJobs(savedJobIds);
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải danh sách công việc đã lưu:", error);
+      }
+    };
+
+    fetchSavedJobs();
+  }, [candidateId]);
+  
 
   return (
     <>
@@ -179,8 +201,8 @@ export default function JobsPage({
             <a
               href="#"
               className={`flex items-center justify-center rounded-lg border-2 ${isApplied
-                  ? "bg-gray-500 text-white cursor-not-allowed" // Trạng thái vô hiệu hóa
-                  : "border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+                ? "bg-gray-500 text-white cursor-not-allowed" // Trạng thái vô hiệu hóa
+                : "border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
                 } px-6 py-3 transition-all`}
               onClick={isApplied ? undefined : handleOpenModal} // Vô hiệu hóa click khi đã ứng tuyển
               aria-disabled={isApplied} // Thuộc tính trợ năng
@@ -190,11 +212,18 @@ export default function JobsPage({
 
             <button
               onClick={handleSaveJob}
-              className="flex items-center justify-center rounded-lg border-2 border-teal-600 px-6 py-3 text-teal-600 transition-all hover:bg-teal-50 dark:hover:bg-teal-900/20"
+              className={`flex items-center justify-center rounded-lg border-2 ${
+                savedJobs.includes(job?.jobId ?? -1)
+                  ? "bg-gray-500 text-white cursor-not-allowed"
+                  : "border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+              } px-6 py-3 transition-all`}
+              disabled={savedJobs.includes(job?.jobId ?? -1)}
             >
               <MdBookmark className="mr-2" />
-              Lưu công việc
+              {savedJobs.includes(job?.jobId ?? -1) ? "Đã lưu" : "Lưu công việc"}
             </button>
+
+
 
           </div>
           <div className="job-description m-4">
