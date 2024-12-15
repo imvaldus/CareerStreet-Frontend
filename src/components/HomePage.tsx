@@ -11,8 +11,12 @@ import { Tech, TechListResType } from "@/app/schemaValidations/tech.schema";
 import Banner from "./Banner";
 import techApiRequest from "@/app/apiRequest/tech";
 import { z } from "zod";
+import { getCookie } from "cookies-next";
+import ApiRequestSave from "@/app/apiRequest/save";
 
 // hàm dùng để lọc các ký tự
+const candidateId = Number(getCookie("userId"));; // Thay "candidateId" bằng tên cookie chứa ID ứng viên
+
 const normalizeString = (str: string) => {
   return str
     .toLowerCase()
@@ -48,6 +52,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
 
+  const [isSaving, setIsSaving] = useState(false);
   const [filters, setFilters] = useState<FilterJobListResType>({
     title: "",
     location: "",
@@ -59,7 +64,7 @@ export default function HomePage() {
   });
 
   // Thêm state mới
-  const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [savedJobs, setSavedJobs] = useState<number[]>([]);
 
   // Thay đổi 3: Thêm useEffect để cập nhật filteredJobs khi context thay đổi
   useEffect(() => {
@@ -82,13 +87,41 @@ export default function HomePage() {
   }, [jobListContext]);
 
   useEffect(() => {
+    const fetchSavedJobs = async () => {
+      const username = getCookie("username");
+      const sessionToken = getCookie("sessionToken");
+      const candidateId = Number(getCookie("userId"));
+      console.log("ứng viên :", candidateId);
+      console.log("username :", username);
+      console.log("sessionToken :", sessionToken);
+      if (!username || !candidateId || !sessionToken) return;
+
+      try {
+        const response = await ApiRequestSave.getListSaveJobforCandidate(candidateId, sessionToken);
+        if (response.status === 200 && response.payload?.data) {
+          const savedJobIds = response.payload.data.map((job: { jobId: number }) => job.jobId);
+          setSavedJobs(savedJobIds);
+          console.log("Saved jobs:", savedJobIds); // Kiểm tra savedJobs
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải danh sách công việc đã lưu:", error);
+      }
+    };
+
+    fetchSavedJobs();
+  }, [candidateId]);
+
+
+
+
+  useEffect(() => {
     const fetchJobTechs = async (jobId: number) => {
       try {
         console.log('Fetching techs for job:', jobId);
         const response = await techApiRequest.getTechByJobId(jobId);
         console.log('Tech response:', response);
         if (response.payload.data) {
-          const techNames = Array.isArray(response.payload.data) 
+          const techNames = Array.isArray(response.payload.data)
             ? response.payload.data.map((tech: z.infer<typeof Tech>) => tech.name)
             : [(response.payload.data as z.infer<typeof Tech>).name];
           console.log('Tech names:', techNames);
@@ -154,7 +187,7 @@ export default function HomePage() {
         (!newFilters.salaryMax || job.salary <= parseInt(newFilters.salaryMax)) &&
         (!newFilters.jobType || job.jobType === newFilters.jobType) &&
         (!newFilters.jobRank || job.jobRank === newFilters.jobRank) &&
-        (!newFilters.companyName || 
+        (!newFilters.companyName ||
           normalizeString(job.companyName).includes(normalizeString(newFilters.companyName)))
       );
     });
@@ -190,56 +223,90 @@ export default function HomePage() {
     }
   };
 
-  // Hàm tìm kiếm bên banner 
+
+
+
+  const toggleSaveJob = async (jobId: number) => {
+    if (isSaving) return; // Ngăn spam click
+    setIsSaving(true);
+  
+    try {
+      if (savedJobs.includes(jobId)) {
+        // Xóa công việc đã lưu
+        const updatedSavedJobs = savedJobs.filter((id) => id !== jobId);
+        setSavedJobs(updatedSavedJobs);
+  
+        await ApiRequestSave.DeleteJob(candidateId, jobId);
+        console.log("Đã xóa công việc:", jobId);
+      } else {
+        // Lưu công việc
+        const updatedSavedJobs = [...savedJobs, jobId];
+        setSavedJobs(updatedSavedJobs);
+  
+        await ApiRequestSave.CreateSave({
+          candidateId,
+          jobId,
+          Date: new Date().toISOString(),
+        });
+        console.log("Đã lưu công việc:", jobId);
+      }
+    } catch (error) {
+      console.error("Lỗi khi lưu/xóa công việc:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+
 
   // Sửa lại hàm handleBannerSearch để giống với handleFilterChange
   const handleBannerSearch = async (searchTerm: string) => {
     try {
       setLoading(true);
-  
+
       const searchTerms = searchTerm.split(',').map(term => term.trim());
-  
+
       const filtered = jobListContext.filter(job => {
         return searchTerms.some(term => {
           const normalizedTerm = normalizeString(term);
-          
+
           const matchTitle = normalizeString(job.title).includes(normalizedTerm);
           const matchLocation = normalizeString(job.jobLocation).includes(normalizedTerm);
           const matchJobType = normalizeString(job.jobType).includes(normalizedTerm);
           const matchCompany = normalizeString(job.companyName).includes(normalizedTerm); // Thêm dòng này
-  
+
           return matchTitle || matchLocation || matchJobType || matchCompany;
         });
       });
-  
+
       const newFilters = { ...filters };
-      
+
       searchTerms.forEach(term => {
         const normalizedTerm = normalizeString(term);
-  
+
         const matchingJobs = jobListContext.filter(job => {
           const matchTitle = normalizeString(job.title).includes(normalizedTerm);
           const matchLocation = normalizeString(job.jobLocation).includes(normalizedTerm);
           const matchJobType = normalizeString(job.jobType).includes(normalizedTerm);
           const matchCompany = normalizeString(job.companyName).includes(normalizedTerm); // Thêm dòng này
-  
+
           if (matchJobType) newFilters.jobType = job.jobType;
           else if (matchLocation) newFilters.location = job.jobLocation;
           else if (matchCompany) newFilters.companyName = job.companyName; // Thêm dòng này
           else if (matchTitle) newFilters.title = term;
-  
+
           return matchTitle || matchLocation || matchJobType || matchCompany;
         });
-  
+
         if (matchingJobs.length === 0) {
           newFilters.title = term;
         }
       });
-  
+
       setFilters(newFilters);
       setFilteredJobs(filtered);
       document.getElementById('jobList')?.scrollIntoView({ behavior: 'smooth' });
-  
+
     } catch (error) {
       console.error('Lỗi search jobs:', error);
     } finally {
@@ -249,14 +316,14 @@ export default function HomePage() {
   };
 
   // Thêm handlers mới
-  const handleSaveJob = (e: React.MouseEvent, jobId: string) => {
-    e.preventDefault();
-    setSavedJobs(prev => 
-      prev.includes(jobId) 
-        ? prev.filter(id => id !== jobId)
-        : [...prev, jobId]
-    );
-  };
+  // const handleSaveJob = (e: React.MouseEvent, jobId: string) => {
+  //   e.preventDefault();
+  //   setSavedJobs(prev => 
+  //     prev.includes(jobId) 
+  //       ? prev.filter(id => id !== jobId)
+  //       : [...prev, jobId]
+  //   );
+  // };
 
   const handleApply = (e: React.MouseEvent, jobId: string) => {
     e.preventDefault();
@@ -410,7 +477,25 @@ export default function HomePage() {
                               >
                                 Ứng tuyển ngay
                               </button>
+
                             </div>
+
+                            {/* Save/Unsave Icon */}
+                            <div
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toggleSaveJob(job.jobId);
+                              }}
+                              className="cursor-pointer text-xl"
+                            >
+                              {savedJobs.includes(job.jobId) ? (
+                                <AiFillHeart className="text-red-600" />
+                              ) : (
+                                <AiOutlineHeart className="text-gray-400" />
+                              )}
+                            </div>
+
+
                           </div>
 
                           {/* Job Title & Type */}
@@ -471,7 +556,7 @@ export default function HomePage() {
                             {jobTechs[job.jobId] && jobTechs[job.jobId].length > 0 && (
                               <>
                                 {jobTechs[job.jobId].slice(0, 3).map((techName, index) => (
-                                  <span 
+                                  <span
                                     key={index}
                                     className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300"
                                   >
