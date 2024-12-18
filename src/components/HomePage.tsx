@@ -14,6 +14,7 @@ import { z } from "zod";
 import { getCookie } from "cookies-next";
 import ApiRequestSave from "@/app/apiRequest/save";
 import router from "next/router";
+import applyApiRequest from "@/app/apiRequest/apply";
 
 // hàm dùng để lọc các ký tự
 const candidateId = Number(getCookie("userId"));; // Thay "candidateId" bằng tên cookie chứa ID ứng viên
@@ -66,6 +67,7 @@ export default function HomePage() {
 
   // Thêm state mới
   const [savedJobs, setSavedJobs] = useState<number[]>([]);
+  const [appliedJobs, setAppliedJobs] = useState<number[]>([]);
 
   // Thay đổi 3: Thêm useEffect để cập nhật filteredJobs khi context thay đổi
   useEffect(() => {
@@ -112,8 +114,39 @@ export default function HomePage() {
     fetchSavedJobs();
   }, [candidateId]);
 
+  // DÙNG CHO BUTTON NẾU ĐÃ APPLY RỒI THÌ HIỂN THỊ NÚT ỨNG TUYỂN THÀNH ĐÃ ỨNG TUYỂN 
+  useEffect(() => {
+    const fetchAppliedJobs = async () => {
+      const jobIds = jobListContext
+        ? jobListContext.map((job) => job.jobId)
+        : [];
+      console.log("Danh sách Job IDs:", jobIds);
 
+      const userId = Number(getCookie("userId"));
 
+      try {
+        const appliedResults = await Promise.all(
+          jobIds.map(async (jobId) => {
+            const result = await applyApiRequest.checkApplicationStatus(userId, jobId);
+            console.log(`Kết quả cho Job ID ${jobId}:`, result);
+            return { jobId, isApplied: result.payload === true }; // Kết hợp jobId và payload
+          })
+        );
+
+        // Lọc ra các jobId đã ứng tuyển
+        const applied = appliedResults
+          .filter((res) => res.isApplied) // Lọc job đã ứng tuyển
+          .map((res) => res.jobId); // Lấy jobId
+
+        console.log("Danh sách công việc đã ứng tuyển:", applied);
+        setAppliedJobs(applied); // Set state với danh sách jobId
+      } catch (error) {
+        console.error("Lỗi khi kiểm tra danh sách công việc đã ứng tuyển:", error);
+      }
+    };
+
+    if (jobListContext) fetchAppliedJobs();
+  }, [jobListContext]);
 
   useEffect(() => {
     const fetchJobTechs = async (jobId: number) => {
@@ -476,12 +509,16 @@ export default function HomePage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                                 {job.jobLocation}
-                              </div>
+                              </div>                           
                               <button
-                                onClick={(e) => handleApply(e, String(job.jobId))}
-                                className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+                                onClick={() => console.log(`Ứng tuyển công việc: ${job.jobId}`)}
+                                disabled={appliedJobs.includes(job.jobId)} // Nếu đã apply thì disable
+                                className={`mt-2 w-full px-4 py-2 rounded ${appliedJobs.includes(job.jobId)
+                                    ? "bg-gray-400 text-white cursor-not-allowed"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                  }`}
                               >
-                                Ứng tuyển ngay
+                                {appliedJobs.includes(job.jobId) ? "Đã ứng tuyển" : "Ứng tuyển ngay"}
                               </button>
                             </div>
 
