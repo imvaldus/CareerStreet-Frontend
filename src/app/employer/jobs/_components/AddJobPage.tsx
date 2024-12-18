@@ -359,7 +359,7 @@ export default function AddJobPage({
     // Thêm validation cho mức lương
     if (Number(salary) < 1000)
       formErrors.salary = MessageUtils.getMessage("ERROR_SALARY_TOO_LOW");
-    if (Number(salary) > 1000000000)
+    if (Number(salary) > 100000000)
       formErrors.salary = MessageUtils.getMessage("ERROR_SALARY_TOO_HIGH");
 
     // Kiểm tra tiêu đề
@@ -1012,7 +1012,7 @@ export default function AddJobPage({
                         <span>Chọn công nghệ</span>
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                        </svg>
+                        </svg>                       
                       </button>
 
                       {isOpen && techList && (
@@ -1051,6 +1051,9 @@ export default function AddJobPage({
                           );
                         })}
                       </div>
+                      {errors.techIds && (
+                          <p className="text-sm text-red-600">{errors.techIds}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1197,7 +1200,7 @@ export default function AddJobPage({
                   {formData.companyName ? formData.companyName.charAt(0).toUpperCase() : '?'}
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-3 truncate max-w-md">
                     {formData.companyName}
                   </h1>
                   <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
@@ -1216,7 +1219,7 @@ export default function AddJobPage({
 
             {/* Job Title and Meta */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              <h1 className="text-3xl font-bold text-gray-900 mb-4 truncate max-w-md">
                 {formData.title || "Tiêu đề công việc"}
               </h1>
 
@@ -1227,7 +1230,7 @@ export default function AddJobPage({
                   </svg>
                   {formData.jobType || "Hình thức làm việc"}
                 </span>
-                <span className="flex items-center rounded-full bg-blue-100 px-4 py-2 text-sm text-blue-700">
+                <span className="flex items-center rounded-full bg-blue-100 px-4 py-2 text-sm text-blue-700 truncate max-w-md">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
