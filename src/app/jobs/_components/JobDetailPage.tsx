@@ -16,14 +16,14 @@ import { TechListResType } from "@/app/schemaValidations/tech.schema";
 import { useApplyContext } from "@/app/context/ApplyContext";
 import ApiRequestSave from "@/app/apiRequest/save";
 import { toast } from "react-toastify";
-import { MessageUtils } from "@/utils/messageUtils";
+
 import Alert from "@/components/Alert";
 import { getCompanyColor } from "@/components/HomePage";
 import { FaGlobe, FaMapMarkerAlt } from "react-icons/fa";
 import { useJobContext } from "@/app/context/JobContext";
 import Link from "next/link";
 import { Job } from "@/app/schemaValidations/job.schema";
- 
+
 const calculateDaysLeft = (expirationDate?: string | Date): number => {
   // Kiểm tra nếu expirationDate là undefined
   if (!expirationDate) {
@@ -140,25 +140,19 @@ export default function JobsPage({
 
     checkStatus();
   }, [job?.jobId, checkApplicationStatus]); // Chạy lại khi jobId thay đổi
-
 // DÙNG ĐỂ HIỂN THỊ TRẠNG THÁI BUTTON SAVE
   const [savedJobs, setSavedJobs] = useState<number[]>([]);
   useEffect(() => {
     const fetchSavedJobs = async () => {
       const username = getCookie("username");
       const sessionToken = getCookie("sessionToken");
-      console.log("ứng viên cho save :", candidateId);
-      console.log("username :", username);  
-      console.log("sessionToken :", sessionToken);
       if (!username || !candidateId || !sessionToken) return;
 
       try {
         const response = await ApiRequestSave.getListSaveJobforCandidate(candidateId, sessionToken);
-        console.log("list danh sách:" + JSON.stringify(response));
         if (response.status === 200) {
           const savedJobIds = response.payload.data.map((job: { jobId: number }) => job.jobId);
           setSavedJobs(savedJobIds);
-          router.refresh()
         }
       } catch (error) {
         console.error("Lỗi khi tải danh sách công việc đã lưu:", error);
@@ -200,6 +194,7 @@ export default function JobsPage({
           {/* Thêm margin-right cho cột 1 */}
           {/* Banner Image */}
           
+
           {/* New Job Post: IT Security Manager */}
           <div className="job-meta mb-8 text-xs p-4">
             <h1 className="job-title mb-4 text-4xl font-bold text-gray-900 dark:text-white">
