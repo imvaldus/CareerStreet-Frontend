@@ -53,7 +53,7 @@ export default function HomePage() {
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [filters, setFilters] = useState<FilterJobListResType>({
     title: "",
@@ -64,8 +64,9 @@ export default function HomePage() {
     jobRank: "",
     companyName: ""
   });
-
+  const { checkApplicationStatus } = useApplyContext();
   // Thêm state mới
+  const [appliedJobs, setAppliedJobs] = useState<number[]>([]);
   const [savedJobs, setSavedJobs] = useState<number[]>([]);
   const [appliedJobs, setAppliedJobs] = useState<number[]>([]);
 
@@ -89,14 +90,13 @@ export default function HomePage() {
     }
   }, [jobListContext]);
 
+
   useEffect(() => {
     const fetchSavedJobs = async () => {
       const username = getCookie("username");
       const sessionToken = getCookie("sessionToken");
       const candidateId = Number(getCookie("userId"));
-      console.log("ứng viên :", candidateId);
-      console.log("username :", username);
-      console.log("sessionToken :", sessionToken);
+
       if (!username || !candidateId || !sessionToken) return;
 
       try {
@@ -274,14 +274,14 @@ export default function HomePage() {
         // Xóa công việc đã lưu
         const updatedSavedJobs = savedJobs.filter((id) => id !== jobId);
         setSavedJobs(updatedSavedJobs);
-  
+
         await ApiRequestSave.DeleteJob(candidateId, jobId);
         console.log("Đã xóa công việc:", jobId);
       } else {
         // Lưu công việc
         const updatedSavedJobs = [...savedJobs, jobId];
         setSavedJobs(updatedSavedJobs);
-  
+
         await ApiRequestSave.CreateSave({
           candidateId,
           jobId,
@@ -295,7 +295,7 @@ export default function HomePage() {
       setIsSaving(false);
     }
   };
-  
+
 
 
   // Sửa lại hàm handleBannerSearch để giống với handleFilterChange
@@ -519,6 +519,14 @@ export default function HomePage() {
                                   }`}
                               >
                                 {appliedJobs.includes(job.jobId) ? "Đã ứng tuyển" : "Ứng tuyển ngay"}
+                                onClick={() => console.log(`Ứng tuyển công việc: ${job.jobId}`)}
+                                disabled={appliedJobs.includes(job.jobId)} // Nếu đã apply thì disable
+                                className={`mt-2 w-full px-4 py-2 rounded ${appliedJobs.includes(job.jobId)
+                                    ? "bg-gray-400 text-white cursor-not-allowed"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                  }`}
+                              >
+                                {appliedJobs.includes(job.jobId) ? "Đã ứng tuyển" : "Ứng tuyển ngay"}
                               </button>
                             </div>
 
@@ -645,6 +653,18 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+         {/* Modal Apply Job Form */}
+         {/* {isModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <ApplyJobForm
+              isOpen={isModalOpen}
+              onClose={handleCloseModal}
+              cvList={cvList} // Truyền cvList vào đây
+              candidateId={candidateId}
+              job={job}
+            />
+          </div>
+        )} */}
       </div>
     </>
   );
