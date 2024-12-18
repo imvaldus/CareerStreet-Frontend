@@ -1055,6 +1055,9 @@ export default function AddJobPage({
                           <p className="text-sm text-red-600">{errors.techIds}</p>
                       )}
                     </div>
+                    {errors.techIds && (
+                      <p className="text-sm text-red-600">{errors.techIds}</p>
+                    )}
                   </div>
                 </div>
               </div>
