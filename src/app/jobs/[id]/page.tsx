@@ -27,7 +27,6 @@ export default async function jobDetail({
     const userIdString = cookieTmp.get("userId");
     const userId = userIdString ? parseInt(userIdString.value, 10) : null;
     
-
     try {
         // Gọi API để lấy thông tin Job mà không kiểm tra sessionToken
         const result = await jobApiRequest.getJobById(jobId);
