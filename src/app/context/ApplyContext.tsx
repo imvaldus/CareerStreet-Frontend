@@ -86,11 +86,12 @@ export const ApplyProvider: React.FC<{ children: React.ReactNode }> = ({
     const cookies = document.cookie;
     const userIdMatch = cookies.match(/userId=([^;]+)/);
     const userId = userIdMatch ? parseInt(userIdMatch[1], 10) : null;
-
+    console.log("thử bên trang chủ", userId);
     if (userId !== null) {
       try {
         const result = await applyApiRequest.checkApplicationStatus(userId, jobId);
         return result.payload === true;
+      
       } catch (error) {
         console.error("Error while checking application status:", error);
       }

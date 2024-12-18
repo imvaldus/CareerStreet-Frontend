@@ -5,6 +5,7 @@ import { ApplyCreateBodyType } from "@/app/schemaValidations/apply.schema";
 import applyApiRequest from "@/app/apiRequest/apply";
 import Alert from "@/components/Alert";
 import { useRouter } from "next/navigation";
+import { MessageUtils } from "@/utils/messageUtils";
 
 interface ApplyJobFormProps {
   isOpen: boolean;
@@ -46,11 +47,11 @@ const ApplyJobForm: React.FC<ApplyJobFormProps> = ({
     const { coverLetter, candidateCvId } = formData;
     const formErrors: { [key: string]: string } = {};
     if (!coverLetter) {
-      formErrors.coverLetter = "Thư xin việc không được để trống.";
+      formErrors.coverLetter = MessageUtils.getMessage("NOT_FULL_FIELD");
     }
 
     if (!candidateCvId) { // Kiểm tra nếu không có CV được chọn (MỚI)
-      formErrors.candidateCvId = "Vui lòng chọn CV."; // Thêm thông báo lỗi (MỚI)
+      formErrors.candidateCvId =  MessageUtils.getMessage("CV_NOT_FOUND"); 
     }
     setErrors(formErrors);
     return Object.keys(formErrors).length === 0;
@@ -69,7 +70,7 @@ const ApplyJobForm: React.FC<ApplyJobFormProps> = ({
           status: 0,
         };
         const result = await applyApiRequest.createApply(ApplyData);
-        Alert.success("Thành công!", result.payload.message);
+        Alert.success("SUCCESS_APPLY_JOB");
         router.push("/candidate/applied");
         router.refresh();
       } catch (error) {
@@ -134,6 +135,7 @@ const ApplyJobForm: React.FC<ApplyJobFormProps> = ({
                       </option>
                     ))}
                 </select>
+                {/* LỖI CHƯA CHỌN CV */}
                 {errors.candidateCvId && <span className="text-red-500 text-sm">{errors.candidateCvId}</span>} {/* Hiển thị thông báo lỗi nếu không chọn CV */}
               </div>
               <div className="col-span-2">

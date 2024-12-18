@@ -13,6 +13,10 @@ import techApiRequest from "@/app/apiRequest/tech";
 import { z } from "zod";
 import { getCookie } from "cookies-next";
 import ApiRequestSave from "@/app/apiRequest/save";
+import { useApplyContext } from "@/app/context/ApplyContext";
+import applyApiRequest from "@/app/apiRequest/apply";
+import ApplyJobForm from "@/app/jobs/_components/ApplyJobForm";
+
 
 // hàm dùng để lọc các ký tự
 const candidateId = Number(getCookie("userId"));; // Thay "candidateId" bằng tên cookie chứa ID ứng viên
@@ -51,7 +55,7 @@ export default function HomePage() {
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [filters, setFilters] = useState<FilterJobListResType>({
     title: "",
@@ -62,8 +66,9 @@ export default function HomePage() {
     jobRank: "",
     companyName: ""
   });
-
+  const { checkApplicationStatus } = useApplyContext();
   // Thêm state mới
+  const [appliedJobs, setAppliedJobs] = useState<number[]>([]);
   const [savedJobs, setSavedJobs] = useState<number[]>([]);
 
   // Thay đổi 3: Thêm useEffect để cập nhật filteredJobs khi context thay đổi
@@ -86,14 +91,13 @@ export default function HomePage() {
     }
   }, [jobListContext]);
 
+
   useEffect(() => {
     const fetchSavedJobs = async () => {
       const username = getCookie("username");
       const sessionToken = getCookie("sessionToken");
       const candidateId = Number(getCookie("userId"));
-      console.log("ứng viên :", candidateId);
-      console.log("username :", username);
-      console.log("sessionToken :", sessionToken);
+
       if (!username || !candidateId || !sessionToken) return;
 
       try {
@@ -111,9 +115,40 @@ export default function HomePage() {
     fetchSavedJobs();
   }, [candidateId]);
 
-
-
-
+// DÙNG CHO BUTTON NẾU ĐÃ APPLY RỒI THÌ HIỂN THỊ NÚT ỨNG TUYỂN THÀNH ĐÃ ỨNG TUYỂN 
+  useEffect(() => {
+    const fetchAppliedJobs = async () => {
+      const jobIds = jobListContext
+        ? jobListContext.map((job) => job.jobId)
+        : [];
+      console.log("Danh sách Job IDs:", jobIds);
+  
+      const userId = Number(getCookie("userId"));
+  
+      try {
+        const appliedResults = await Promise.all(
+          jobIds.map(async (jobId) => {
+            const result = await applyApiRequest.checkApplicationStatus(userId, jobId);
+            console.log(`Kết quả cho Job ID ${jobId}:`, result);
+            return { jobId, isApplied: result.payload === true }; // Kết hợp jobId và payload
+          })
+        );
+  
+        // Lọc ra các jobId đã ứng tuyển
+        const applied = appliedResults
+          .filter((res) => res.isApplied) // Lọc job đã ứng tuyển
+          .map((res) => res.jobId); // Lấy jobId
+  
+        console.log("Danh sách công việc đã ứng tuyển:", applied);
+        setAppliedJobs(applied); // Set state với danh sách jobId
+      } catch (error) {
+        console.error("Lỗi khi kiểm tra danh sách công việc đã ứng tuyển:", error);
+      }
+    };
+  
+    if (jobListContext) fetchAppliedJobs();
+  }, [jobListContext]);
+  
   useEffect(() => {
     const fetchJobTechs = async (jobId: number) => {
       try {
@@ -224,25 +259,23 @@ export default function HomePage() {
   };
 
 
-
-
   const toggleSaveJob = async (jobId: number) => {
     if (isSaving) return; // Ngăn spam click
     setIsSaving(true);
-  
+
     try {
       if (savedJobs.includes(jobId)) {
         // Xóa công việc đã lưu
         const updatedSavedJobs = savedJobs.filter((id) => id !== jobId);
         setSavedJobs(updatedSavedJobs);
-  
+
         await ApiRequestSave.DeleteJob(candidateId, jobId);
         console.log("Đã xóa công việc:", jobId);
       } else {
         // Lưu công việc
         const updatedSavedJobs = [...savedJobs, jobId];
         setSavedJobs(updatedSavedJobs);
-  
+
         await ApiRequestSave.CreateSave({
           candidateId,
           jobId,
@@ -256,7 +289,7 @@ export default function HomePage() {
       setIsSaving(false);
     }
   };
-  
+
 
 
   // Sửa lại hàm handleBannerSearch để giống với handleFilterChange
@@ -472,11 +505,16 @@ export default function HomePage() {
                                 {job.jobLocation}
                               </div>
                               <button
-                                onClick={(e) => handleApply(e, String(job.jobId))}
-                                className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                                onClick={() => console.log(`Ứng tuyển công việc: ${job.jobId}`)}
+                                disabled={appliedJobs.includes(job.jobId)} // Nếu đã apply thì disable
+                                className={`mt-2 w-full px-4 py-2 rounded ${appliedJobs.includes(job.jobId)
+                                    ? "bg-gray-400 text-white cursor-not-allowed"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                  }`}
                               >
-                                Ứng tuyển ngay
+                                {appliedJobs.includes(job.jobId) ? "Đã ứng tuyển" : "Ứng tuyển ngay"}
                               </button>
+
 
                             </div>
 
@@ -603,6 +641,18 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+         {/* Modal Apply Job Form */}
+         {/* {isModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <ApplyJobForm
+              isOpen={isModalOpen}
+              onClose={handleCloseModal}
+              cvList={cvList} // Truyền cvList vào đây
+              candidateId={candidateId}
+              job={job}
+            />
+          </div>
+        )} */}
       </div>
     </>
   );
