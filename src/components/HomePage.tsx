@@ -13,6 +13,7 @@ import techApiRequest from "@/app/apiRequest/tech";
 import { z } from "zod";
 import { getCookie } from "cookies-next";
 import ApiRequestSave from "@/app/apiRequest/save";
+import router from "next/router";
 
 // hàm dùng để lọc các ký tự
 const candidateId = Number(getCookie("userId"));; // Thay "candidateId" bằng tên cookie chứa ID ứng viên
@@ -224,12 +225,17 @@ export default function HomePage() {
   };
 
 
-
-
   const toggleSaveJob = async (jobId: number) => {
     if (isSaving) return; // Ngăn spam click
     setIsSaving(true);
-  
+    const username = getCookie("username");
+
+    if (!username) {
+      alert("Bạn cần đăng nhập để lưu công việc.");
+      router.push("/login");
+      return;
+    }
+
     try {
       if (savedJobs.includes(jobId)) {
         // Xóa công việc đã lưu
@@ -473,11 +479,10 @@ export default function HomePage() {
                               </div>
                               <button
                                 onClick={(e) => handleApply(e, String(job.jobId))}
-                                className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                                className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-700"
                               >
                                 Ứng tuyển ngay
                               </button>
-
                             </div>
 
                             {/* Save/Unsave Icon */}
